@@ -696,24 +696,25 @@ function wredo(who){
 }
 function rdotsW(pfx,val){for(var i=0;i<4;i++) document.getElementById(pfx+i).className='pdot'+(i<val.length?' f':'');}
 
-// Keyboard support for wizard PIN & login PIN
+// Keyboard support - numbers only, Backspace to delete
 document.addEventListener('keydown', function(e){
   var k=e.key;
+  // Only allow 0-9 and Backspace, ignore everything else silently
+  var isNum=(k>='0'&&k<='9');
+  var isDel=(k==='Backspace');
+  if(!isNum&&!isDel) return;
   // Login screen
   if(document.getElementById('SCR-LOGIN').classList.contains('on')){
-    if(k>='0'&&k<='9') lpp(k);
-    else if(k==='Backspace') ldel();
-    else if(k==='Escape') lclr();
+    if(isNum) lpp(k);
+    else if(isDel) ldel();
     return;
   }
   // Wizard PIN steps
   if(document.getElementById('SCR-SETUP').classList.contains('on')){
     var who = wizStep===1?'admin':wizStep===2?'boss':wizStep===3?'staff':null;
     if(!who) return;
-    if(k>='0'&&k<='9') wkp(who,k);
-    else if(k==='Backspace') wdel(who);
-    else if(k==='Escape') wclr(who);
-    else if(k==='Enter') wizNext();
+    if(isNum) wkp(who,k);
+    else if(isDel) wdel(who);
   }
 });
 
