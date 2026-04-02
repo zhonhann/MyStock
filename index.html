@@ -630,15 +630,15 @@ async function wizNext(){
     if(!rn){toast('⚠️ Please enter restaurant name','to');return;}
     wizStep=1;wizUpdateSteps();
   } else if(wizStep===1){
-    if(!wAdminDone){toast('⚠️ Please set and confirm Admin PIN','to');return;}
+    if(!wAdminDone){toast('⚠️ Please set Admin PIN','to');return;}
     wizStep=2;wizUpdateSteps();
   } else if(wizStep===2){
-    if(!wBossDone){toast('⚠️ Please set and confirm Boss PIN','to');return;}
+    if(!wBossDone){toast('⚠️ Please set Boss PIN','to');return;}
+    if(wPins.boss===wPins.admin){toast('❌ Boss PIN must be different from Admin PIN','tr');wBossDone=false;wPins.boss='';rdotsW('wbd','');return;}
     wizStep=3;wizUpdateSteps();
   } else {
-    if(!wStaffDone){toast('⚠️ Please set and confirm Staff PIN','to');return;}
-    var all=[wPins.admin,wPins.boss,wPins.staff];
-    if(all.filter(function(v,i,a){return a.indexOf(v)===i;}).length<3){toast('❌ All 3 PINs must be different','tr');return;}
+    if(!wStaffDone){toast('⚠️ Please set Staff PIN','to');return;}
+    if(wPins.staff===wPins.admin||wPins.staff===wPins.boss){toast('❌ Staff PIN must be different from Admin & Boss PIN','tr');wStaffDone=false;wPins.staff='';rdotsW('wsd','');return;}
     showLoading('Registering restaurant...');
     try {
       var rname=document.getElementById('w-rname').value.trim();
@@ -660,19 +660,24 @@ async function wizNext(){
 }
 
 function wizBack(){
-  if(wizStep===1){wAdminDone=false;wPins.admin="";rdotsW("wad","");}
-  else if(wizStep===2){wBossDone=false;wPins.boss="";rdotsW("wbd","");}
-  else if(wizStep===3){wStaffDone=false;wPins.staff="";rdotsW("wsd","");}
+  // Reset current step PIN before going back
+  if(wizStep===1){wAdminDone=false;wPins.admin='';rdotsW('wad','');}
+  else if(wizStep===2){wBossDone=false;wPins.boss='';rdotsW('wbd','');} 
+  else if(wizStep===3){wStaffDone=false;wPins.staff='';rdotsW('wsd','');}
   if(wizStep>0){wizStep--;wizUpdateSteps();}
+  // Also reset the step we go back to
+  if(wizStep===1){wAdminDone=false;wPins.admin='';rdotsW('wad','');}
+  else if(wizStep===2){wBossDone=false;wPins.boss='';rdotsW('wbd','');}
+  else if(wizStep===3){wStaffDone=false;wPins.staff='';rdotsW('wsd','');}
 }
 
-// wizard PIN: fill PIN, auto advance after 4 digits
+// wizard PIN: fill PIN, show checkmark, user presses Next manually
 function wkp(who,d){
   var done=(who==='admin'&&wAdminDone)||(who==='boss'&&wBossDone)||(who==='staff'&&wStaffDone);
   if(done)return;
-  if(who==='admin'){if(wPins.admin.length<4){wPins.admin+=d;rdotsW('wad',wPins.admin);if(wPins.admin.length===4){wAdminDone=true;setTimeout(wizNext,300);}}}
-  else if(who==='boss'){if(wPins.boss.length<4){wPins.boss+=d;rdotsW('wbd',wPins.boss);if(wPins.boss.length===4){wBossDone=true;setTimeout(wizNext,300);}}}
-  else{if(wPins.staff.length<4){wPins.staff+=d;rdotsW('wsd',wPins.staff);if(wPins.staff.length===4){wStaffDone=true;setTimeout(wizNext,300);}}}
+  if(who==='admin'){if(wPins.admin.length<4){wPins.admin+=d;rdotsW('wad',wPins.admin);if(wPins.admin.length===4){wAdminDone=true;for(var i=0;i<4;i++)document.getElementById('wad'+i).className='pdot ok';}}}
+  else if(who==='boss'){if(wPins.boss.length<4){wPins.boss+=d;rdotsW('wbd',wPins.boss);if(wPins.boss.length===4){wBossDone=true;for(var i=0;i<4;i++)document.getElementById('wbd'+i).className='pdot ok';}}}
+  else{if(wPins.staff.length<4){wPins.staff+=d;rdotsW('wsd',wPins.staff);if(wPins.staff.length===4){wStaffDone=true;for(var i=0;i<4;i++)document.getElementById('wsd'+i).className='pdot ok';}}}
 }
 function wdel(who){
   if(who==='admin'&&!wAdminDone){wPins.admin=wPins.admin.slice(0,-1);rdotsW('wad',wPins.admin);}
@@ -680,9 +685,9 @@ function wdel(who){
   else if(who==='staff'&&!wStaffDone){wPins.staff=wPins.staff.slice(0,-1);rdotsW('wsd',wPins.staff);}
 }
 function wclr(who){
-  if(who==='admin'&&!wAdminDone){wPins.admin='';rdotsW('wad','');}
-  else if(who==='boss'&&!wBossDone){wPins.boss='';rdotsW('wbd','');}
-  else if(who==='staff'&&!wStaffDone){wPins.staff='';rdotsW('wsd','');}
+  if(who==='admin'){wAdminDone=false;wPins.admin='';rdotsW('wad','');}
+  else if(who==='boss'){wBossDone=false;wPins.boss='';rdotsW('wbd','');}
+  else if(who==='staff'){wStaffDone=false;wPins.staff='';rdotsW('wsd','');}
 }
 function wredo(who){
   if(who==='admin'){wAdminDone=false;wPins.admin='';rdotsW('wad','');}
