@@ -680,9 +680,10 @@ function wkp(who,d){
   else{if(wPins.staff.length<4){wPins.staff+=d;rdotsW('wsd',wPins.staff);if(wPins.staff.length===4){wStaffDone=true;for(var i=0;i<4;i++)document.getElementById('wsd'+i).className='pdot ok';}}}
 }
 function wdel(who){
-  if(who==='admin'&&!wAdminDone){wPins.admin=wPins.admin.slice(0,-1);rdotsW('wad',wPins.admin);}
-  else if(who==='boss'&&!wBossDone){wPins.boss=wPins.boss.slice(0,-1);rdotsW('wbd',wPins.boss);}
-  else if(who==='staff'&&!wStaffDone){wPins.staff=wPins.staff.slice(0,-1);rdotsW('wsd',wPins.staff);}
+  // Allow delete even after PIN is done - user can fix mistake
+  if(who==='admin'){wAdminDone=false;wPins.admin=wPins.admin.slice(0,-1);rdotsW('wad',wPins.admin);}
+  else if(who==='boss'){wBossDone=false;wPins.boss=wPins.boss.slice(0,-1);rdotsW('wbd',wPins.boss);}
+  else if(who==='staff'){wStaffDone=false;wPins.staff=wPins.staff.slice(0,-1);rdotsW('wsd',wPins.staff);}
 }
 function wclr(who){
   if(who==='admin'){wAdminDone=false;wPins.admin='';rdotsW('wad','');}
