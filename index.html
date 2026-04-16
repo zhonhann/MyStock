@@ -5,223 +5,622 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>StockScan</title>
 <style>
-:root{
-  --bg:#f4f5f7;--surface:#ffffff;--surface2:#f8f9fb;--border:#e5e7eb;
-  --green:#16a34a;--gdim:#dcfce7;--blue:#ff5722;--bdim:#fff3f0;
-  --orange:#d97706;--odim:#fef3c7;--purple:#7c3aed;--pdim:#ede9fe;
-  --red:#dc2626;--rdim:#fee2e2;--text:#111827;--dim:#6b7280;--muted:#9ca3af;
+/* =============================================
+   COLOR VARIABLES
+   Change these to change the whole app's color
+   ============================================= */
+:root {
+  --bg:       #f4f5f7;  /* page background */
+  --surface:  #ffffff;  /* card/panel background */
+  --surface2: #f8f9fb;  /* table header, subtle bg */
+  --border:   #e5e7eb;  /* borders everywhere */
+  --text:     #111827;  /* main text */
+  --dim:      #6b7280;  /* secondary text */
+  --muted:    #9ca3af;  /* placeholder, footer text */
+
+  --accent:   #ff5722;  /* orange-red, main brand color */
+  --adim:     #fff3f0;  /* light accent background */
+
+  --green:    #16a34a;  /* in-stock, success */
+  --gdim:     #dcfce7;  /* light green background */
+  --red:      #dc2626;  /* out of stock, danger */
+  --rdim:     #fee2e2;  /* light red background */
+  --orange:   #d97706;  /* low stock, warning */
+  --odim:     #fef3c7;  /* light orange background */
+  --blue:     #2563eb;  /* info, unit tags */
+  --bdim:     #dbeafe;  /* light blue background */
+  --purple:   #7c3aed;  /* boss role color */
+  --pdim:     #ede9fe;  /* light purple background */
 }
-*{margin:0;padding:0;box-sizing:border-box;}
-body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh;}
-.screen{display:none;min-height:100vh;}
-.screen.on{display:flex;}
-.center{align-items:center;justify-content:center;background:linear-gradient(135deg,#fff8f6 0%,#f4f5f7 100%);}
-.wizard{background:var(--surface);border:1px solid var(--border);border-radius:20px;width:100%;max-width:460px;overflow:hidden;}
-.wiz-head{padding:28px 32px 20px;text-align:center;border-bottom:1px solid var(--border);}
-.wiz-logo{width:60px;height:60px;background:linear-gradient(135deg,#3b82f6,#8b5cf6);border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:28px;margin:0 auto 14px;}
-.wiz-title{font-size:20px;font-weight:700;}
-.wiz-sub{font-size:13px;color:var(--muted);margin-top:4px;}
-.wiz-steps{display:flex;gap:6px;padding:16px 32px;border-bottom:1px solid var(--border);}
-.wstep{flex:1;height:3px;border-radius:3px;background:var(--border);transition:background 0.3s;}
-.wstep.done{background:var(--green);}
-.wstep.active{background:var(--blue);}
-.wiz-body{padding:28px 32px;}
-.wiz-foot{padding:16px 32px;border-top:1px solid var(--border);display:flex;gap:10px;justify-content:flex-end;}
-.step-icon{font-size:32px;text-align:center;margin-bottom:12px;}
-.step-title{font-size:16px;font-weight:700;text-align:center;margin-bottom:4px;}
-.step-desc{font-size:13px;color:var(--dim);text-align:center;margin-bottom:22px;line-height:1.6;}
-.frow{margin-bottom:16px;}
-.frow:last-child{margin-bottom:0;}
-.flbl{font-size:11px;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;display:block;}
-.finp{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:11px 14px;color:var(--text);font-size:14px;outline:none;transition:border-color 0.2s;}
-.finp:focus{border-color:var(--blue);}
-.finp::placeholder{color:var(--muted);}
-.fhint{font-size:11px;color:var(--muted);margin-top:4px;}
-.pin-row{display:flex;gap:8px;justify-content:center;margin-bottom:8px;}
-.pdot{width:52px;height:52px;border-radius:12px;border:2px solid var(--border);background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:20px;transition:all 0.15s;}
-.pdot.f{border-color:var(--blue);background:var(--bdim);}
-.pdot.f::after{content:'●';color:var(--blue);}
-.pdot.err{border-color:var(--red);background:var(--rdim);animation:shk .35s;}
-.pdot.ok{border-color:var(--green);background:var(--gdim);}
-.pdot.ok::after{content:'●';color:var(--green);}
-@keyframes shk{0%,100%{transform:translateX(0);}25%{transform:translateX(-5px);}75%{transform:translateX(5px);}}
-.keypad{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
-.kkey{padding:13px;border-radius:11px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:17px;font-weight:700;cursor:pointer;transition:all 0.12s;user-select:none;}
-.kkey:hover{background:var(--bdim);border-color:var(--blue);color:var(--blue);}
-.kkey:active{transform:scale(0.94);}
-.kkey.kdel{background:var(--rdim);border-color:var(--red);color:var(--red);}
-.kkey.kclr{color:var(--muted);}
-.pin-label{font-size:12px;color:var(--muted);text-align:center;margin-bottom:14px;}
-.tag-ok{display:inline-flex;align-items:center;gap:4px;background:var(--gdim);border:1px solid var(--green);color:var(--green);border-radius:6px;padding:3px 10px;font-size:11px;font-weight:700;}
-.tag-err{display:inline-flex;align-items:center;gap:4px;background:var(--rdim);border:1px solid var(--red);color:var(--red);border-radius:6px;padding:3px 10px;font-size:11px;font-weight:700;}
-.login-card{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:36px 32px;width:100%;max-width:380px;text-align:center;}
-.login-logo{width:60px;height:60px;background:linear-gradient(135deg,#3b82f6,#8b5cf6);border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:28px;margin:0 auto 12px;}
-.rname{font-size:20px;font-weight:700;margin-bottom:4px;}
-.rsub{font-size:12px;color:var(--muted);margin-bottom:24px;}
-.login-pdots{display:flex;gap:10px;justify-content:center;margin-bottom:20px;}
-.login-pdot{width:50px;height:50px;border-radius:12px;border:2px solid var(--border);background:var(--bg);display:flex;align-items:center;justify-content:center;transition:all 0.15s;}
-.login-pdot.f{border-color:var(--blue);background:var(--bdim);}
-.login-pdot.f::after{content:'●';font-size:20px;color:var(--blue);}
-.login-pdot.err{border-color:var(--red);background:var(--rdim);animation:shk .35s;}
-.login-err{font-size:12px;color:var(--red);min-height:18px;margin-top:8px;}
-.login-footer{margin-top:20px;font-size:11px;color:var(--muted);}
-.setname-card{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:40px 36px;width:100%;max-width:420px;text-align:center;}
-.setname-icon{font-size:48px;margin-bottom:16px;}
-.setname-title{font-size:20px;font-weight:700;margin-bottom:8px;}
-.setname-sub{font-size:13px;color:var(--dim);margin-bottom:28px;line-height:1.6;}
-.loading-ov{position:fixed;inset:0;background:rgba(255,255,255,0.88);z-index:9999;display:none;align-items:center;justify-content:center;flex-direction:column;gap:14px;}
-.loading-ov.on{display:flex;}
-.spinner{width:40px;height:40px;border:3px solid var(--border);border-top-color:var(--blue);border-radius:50%;animation:spin 0.8s linear infinite;}
-@keyframes spin{to{transform:rotate(360deg);}}
-.loading-txt{font-size:13px;color:var(--dim);}
-#APP{display:none;flex-direction:column;}
-.topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:0 24px;height:56px;display:flex;align-items:center;gap:14px;position:sticky;top:0;z-index:200;flex-shrink:0;}
-.tlogo{width:34px;height:34px;background:linear-gradient(135deg,#3b82f6,#8b5cf6);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:17px;}
-.tname{font-size:15px;font-weight:700;}
-.tsub{font-size:11px;color:var(--muted);}
-.tnav-wrap{display:flex;gap:2px;margin-left:18px;}
-.tnav{padding:7px 14px;border-radius:8px;font-size:13px;font-weight:500;color:var(--dim);cursor:pointer;transition:all 0.15s;border:none;background:none;}
-.tnav:hover{background:var(--surface2);color:var(--text);}
-.tnav.on{background:var(--bdim);color:var(--blue);}
-.tbr{margin-left:auto;display:flex;align-items:center;gap:10px;}
-.sdot{display:flex;align-items:center;gap:6px;padding:5px 12px;background:var(--gdim);border:1px solid var(--green);border-radius:20px;font-size:11px;color:var(--green);font-weight:600;}
-.pulse{width:7px;height:7px;background:var(--green);border-radius:50%;animation:p 1.5s infinite;}
-@keyframes p{0%,100%{opacity:1;}50%{opacity:.3;}}
-.uchip{display:flex;align-items:center;gap:8px;padding:5px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:20px;font-size:12px;}
-.uav{width:24px;height:24px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;}
-.av-admin{background:var(--rdim);color:var(--red);border:1px solid var(--red);}
-.av-boss{background:var(--pdim);color:var(--purple);border:1px solid var(--purple);}
-.av-staff{background:var(--gdim);color:var(--green);border:1px solid var(--green);}
-.rbdg{font-size:10px;font-weight:700;padding:1px 6px;border-radius:4px;}
-.rb-admin{background:var(--rdim);color:var(--red);}
-.rb-boss{background:var(--pdim);color:var(--purple);}
-.rb-staff{background:var(--gdim);color:var(--green);}
-.logbtn{padding:6px 14px;border-radius:8px;border:1px solid var(--border);background:none;color:var(--dim);font-size:12px;cursor:pointer;}
-.logbtn:hover{border-color:var(--red);color:var(--red);}
-.page{display:none;padding:24px;max-width:1400px;}
-.page.on{display:block;}
-.phead{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px;gap:12px;}
-.ptitle{font-size:18px;font-weight:700;}
-.psub{font-size:12px;color:var(--muted);margin-top:3px;}
-.sgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px;}
-.scard{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 18px;}
-.slbl{font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;}
-.sval{font-size:26px;font-weight:700;font-family:monospace;}
-.ssub{font-size:11px;color:var(--muted);margin-top:3px;}
-.scan-area{background:var(--surface);border:2px dashed var(--border);border-radius:16px;padding:22px;margin-bottom:20px;transition:border-color .2s;}
-.scan-area.on{border-color:var(--blue);border-style:solid;}
-.scan-top{display:flex;align-items:center;gap:14px;margin-bottom:14px;}
-.sico{width:46px;height:46px;background:var(--bdim);border:1px solid var(--blue);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;}
-.scan-row{display:flex;gap:10px;}
-.scaninp{flex:1;background:var(--bg);border:2px solid var(--border);border-radius:10px;padding:11px 16px;color:var(--text);font-size:16px;outline:none;transition:border-color .2s;font-family:monospace;}
-.scaninp:focus{border-color:var(--blue);}
-.res-box{background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:18px;margin-bottom:18px;display:none;}
-.res-box.on{display:block;animation:fi .2s ease;}
-@keyframes fi{from{opacity:0;transform:translateY(-6px);}to{opacity:1;transform:translateY(0);}}
-.res-head{display:flex;align-items:center;gap:14px;margin-bottom:14px;}
-.res-ico{width:48px;height:48px;border-radius:10px;background:var(--bdim);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:22px;}
-.res-name{font-size:17px;font-weight:700;}
-.res-meta{font-size:12px;color:var(--dim);margin-top:2px;}
-.res-stock{margin-left:auto;text-align:right;}
-.rsv{font-size:22px;font-weight:700;font-family:monospace;}
-.rsl{font-size:11px;color:var(--muted);}
-.act-row{display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;}
-.fgrp{display:flex;flex-direction:column;gap:4px;}
-.fgl{font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.4px;}
-.usel{display:flex;gap:5px;flex-wrap:wrap;}
-.ubtn{padding:5px 12px;border-radius:7px;border:1px solid var(--border);background:var(--surface);color:var(--dim);font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;}
-.ubtn:hover{border-color:var(--blue);color:var(--blue);}
-.ubtn.on{background:var(--bdim);border-color:var(--blue);color:var(--blue);}
-.qinp{width:80px;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:7px 10px;color:var(--text);font-size:14px;outline:none;text-align:center;font-family:monospace;}
-.qinp:focus{border-color:var(--blue);}
-.btn{padding:8px 18px;border-radius:8px;border:none;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;display:inline-flex;align-items:center;gap:6px;}
-.btn:hover{transform:translateY(-1px);}
-.btn:active{transform:scale(.97);}
-.bg{background:var(--green);color:#0a1f12;}
-.br{background:var(--red);color:white;}
-.bb{background:var(--blue);color:white;}
-.bo{background:var(--orange);color:#0f0a00;}
-.bou{background:transparent;border:1px solid var(--border);color:var(--dim);}
-.bou:hover{border-color:var(--blue);color:var(--blue);}
-.bda{background:var(--rdim);border:1px solid var(--red);color:var(--red);}
-.bda:hover{background:var(--red);color:white;}
-.bsm{padding:4px 10px;font-size:12px;}
-.tw{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:20px;}
-.th2{padding:14px 18px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);}
-.tt{font-size:14px;font-weight:700;}
-table{width:100%;border-collapse:collapse;}
-thead tr{background:var(--surface2);}
-th{padding:9px 14px;text-align:left;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;}
-td{padding:11px 14px;font-size:13px;border-top:1px solid var(--border);}
-tr:hover td{background:#fafafa;}
-.srch{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:6px 12px;color:var(--text);font-size:13px;outline:none;width:200px;}
-.srch:focus{border-color:var(--blue);}
-.sbdg{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:700;}
-.sb-ok{background:var(--gdim);color:var(--green);border:1px solid var(--green);}
-.sb-low{background:var(--odim);color:var(--orange);border:1px solid var(--orange);}
-.sb-out{background:var(--rdim);color:var(--red);border:1px solid var(--red);}
-.utag{padding:2px 7px;border-radius:4px;font-size:11px;font-weight:700;background:var(--bdim);color:var(--blue);}
-.sn{font-family:monospace;font-size:14px;font-weight:700;}
-.sok{color:var(--green);}.slow{color:var(--orange);}.sout{color:var(--red);}
-.pname{font-weight:600;}.psup{font-size:11px;color:var(--muted);margin-top:1px;}
-.li-in td:first-child{border-left:3px solid var(--green);}
-.li-out td:first-child{border-left:3px solid var(--red);}
-.ltype{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:6px;font-size:11px;font-weight:700;}
-.lt-in{background:var(--gdim);color:var(--green);}
-.lt-out{background:var(--rdim);color:var(--red);}
-.es{text-align:center;padding:40px 20px;color:var(--muted);}
-.ei{font-size:40px;margin-bottom:10px;}
-.alertbox{background:var(--odim);border:1px solid var(--orange);border-radius:10px;padding:11px 14px;margin-bottom:18px;display:flex;align-items:center;gap:10px;font-size:13px;}
-.alertbox.hidden{display:none;}
-.ov{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:500;display:none;align-items:center;justify-content:center;padding:20px;}
-.ov.open{display:flex;animation:fo .2s;}
-@keyframes fo{from{opacity:0;}to{opacity:1;}}
-.modal{background:var(--surface);border:1px solid var(--border);border-radius:16px;width:100%;max-width:500px;overflow:hidden;max-height:90vh;overflow-y:auto;}
-.msm{max-width:400px;}
-.mhead{padding:18px 22px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
-.mtitle{font-size:15px;font-weight:700;}
-.mclose{width:30px;height:30px;border-radius:7px;border:1px solid var(--border);background:none;color:var(--dim);cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center;}
-.mclose:hover{background:var(--rdim);color:var(--red);}
-.mbody{padding:22px;}
-.mfoot{padding:14px 22px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end;}
-.set-section{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:18px;}
-.set-sec-title{font-size:14px;font-weight:700;margin-bottom:16px;display:flex;align-items:center;gap:8px;padding-bottom:12px;border-bottom:1px solid var(--border);}
-.set-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);}
-.set-row:last-child{border-bottom:none;}
-.set-key{font-size:13px;font-weight:600;}
-.set-sub{font-size:11px;color:var(--muted);margin-top:2px;}
-.set-val{font-size:13px;color:var(--dim);}
-.admin-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;}
-.admin-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px;}
-.admin-card-title{font-size:13px;font-weight:700;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:7px;}
-.urow{display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--surface2);border-radius:8px;margin-bottom:8px;}
-.ura{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;}
-.uri{flex:1;}
-.urn{font-size:13px;font-weight:600;}
-.urr{font-size:11px;color:var(--muted);margin-top:1px;}
-.hf-row{display:flex;gap:6px;margin-bottom:14px;}
-.hfbtn{padding:4px 12px;border-radius:7px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);font-size:12px;cursor:pointer;}
-.hfbtn.on{border-color:var(--blue);color:var(--blue);background:var(--bdim);}
-.reset-banner{margin-top:16px;padding:10px 14px;background:var(--rdim);border:1px solid var(--red);border-radius:8px;font-size:11px;color:var(--red);display:flex;align-items:center;justify-content:space-between;gap:10px;}
-.reset-btn{padding:4px 10px;border-radius:6px;border:1px solid var(--red);background:transparent;color:var(--red);font-size:11px;cursor:pointer;font-weight:700;}
-.reset-btn:hover{background:var(--red);color:white;}
-.toast-wrap{position:fixed;bottom:22px;right:22px;z-index:9999;display:flex;flex-direction:column;gap:7px;}
-.toast{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:11px 16px;font-size:13px;min-width:240px;display:flex;align-items:center;gap:9px;box-shadow:0 8px 24px rgba(0,0,0,.4);animation:ti .3s ease;pointer-events:none;}
-@keyframes ti{from{opacity:0;transform:translateX(16px);}to{opacity:1;transform:translateX(0);}}
-.toast.tg{border-color:var(--green);background:var(--gdim);}
-.toast.tr{border-color:var(--red);background:var(--rdim);}
-.toast.to{border-color:var(--orange);background:var(--odim);}
+
+/* =============================================
+   RESET & BASE
+   ============================================= */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  min-height: 100vh;
+}
+
+/* =============================================
+   SCREENS
+   Only one screen shows at a time (.on class)
+   ============================================= */
+.screen { display: none; min-height: 100vh; }
+.screen.on { display: flex; }
+.center {
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #fff8f6 0%, #f4f5f7 100%);
+}
+
+/* =============================================
+   LOADING OVERLAY
+   Shows spinner while waiting for Supabase
+   ============================================= */
+.loading-ov {
+  position: fixed; inset: 0;
+  background: rgba(255,255,255,0.88);
+  z-index: 9999;
+  display: none;
+  align-items: center; justify-content: center;
+  flex-direction: column; gap: 14px;
+}
+.loading-ov.on { display: flex; }
+.spinner {
+  width: 40px; height: 40px;
+  border: 3px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading-txt { font-size: 13px; color: var(--dim); }
+
+/* =============================================
+   SETUP WIZARD CARD
+   ============================================= */
+.wizard {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  width: 100%; max-width: 440px;
+  overflow: hidden;
+  box-shadow: 0 4px 24px rgba(0,0,0,.08);
+}
+.wiz-head {
+  padding: 28px 32px 20px;
+  text-align: center;
+  border-bottom: 1px solid var(--border);
+}
+.wiz-logo {
+  width: 64px; height: 64px;
+  background: linear-gradient(135deg, var(--accent), #ff8a65);
+  border-radius: 20px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 30px;
+  margin: 0 auto 14px;
+  box-shadow: 0 4px 12px rgba(255,87,34,.3);
+}
+.wiz-title { font-size: 20px; font-weight: 700; }
+.wiz-sub { font-size: 13px; color: var(--muted); margin-top: 4px; }
+
+/* Progress bar at top of wizard */
+.wiz-steps {
+  display: flex; gap: 6px;
+  padding: 16px 32px;
+  border-bottom: 1px solid var(--border);
+}
+.wstep {
+  flex: 1; height: 4px; border-radius: 4px;
+  background: var(--border);
+  transition: background 0.3s;
+}
+.wstep.done   { background: var(--green); }
+.wstep.active { background: var(--accent); }
+
+.wiz-body { padding: 24px 32px; }
+.wiz-foot {
+  padding: 16px 32px;
+  border-top: 1px solid var(--border);
+  display: flex; gap: 10px; justify-content: flex-end;
+}
+.step-icon { font-size: 36px; text-align: center; margin-bottom: 12px; }
+.step-title { font-size: 17px; font-weight: 700; text-align: center; margin-bottom: 4px; }
+.step-desc { font-size: 13px; color: var(--dim); text-align: center; margin-bottom: 20px; line-height: 1.6; }
+
+/* =============================================
+   FORM INPUTS
+   ============================================= */
+.frow { margin-bottom: 16px; }
+.frow:last-child { margin-bottom: 0; }
+.flbl {
+  font-size: 11px; font-weight: 700;
+  color: var(--dim);
+  text-transform: uppercase; letter-spacing: 0.5px;
+  margin-bottom: 6px; display: block;
+}
+.finp {
+  width: 100%;
+  background: var(--bg);
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  padding: 11px 14px;
+  color: var(--text); font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.finp:focus { border-color: var(--accent); }
+.finp::placeholder { color: var(--muted); }
+.fhint { font-size: 11px; color: var(--muted); margin-top: 4px; }
+
+/* =============================================
+   PIN DOTS
+   The 4 circles that show PIN progress
+   ============================================= */
+.pin-row { display: flex; gap: 10px; justify-content: center; margin-bottom: 10px; }
+.pdot {
+  width: 56px; height: 56px;
+  border-radius: 14px;
+  border: 2px solid var(--border);
+  background: var(--bg);
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.15s;
+}
+.pdot.f   { border-color: var(--accent); background: var(--adim); }
+.pdot.f::after  { content: '●'; color: var(--accent); }
+.pdot.ok  { border-color: var(--green); background: var(--gdim); }
+.pdot.ok::after { content: '●'; color: var(--green); }
+.pdot.err { border-color: var(--red); background: var(--rdim); animation: shk .35s; }
+@keyframes shk {
+  0%,100% { transform: translateX(0); }
+  25%     { transform: translateX(-5px); }
+  75%     { transform: translateX(5px); }
+}
+.pin-label { font-size: 13px; color: var(--dim); text-align: center; margin-bottom: 14px; font-weight: 500; }
+
+/* =============================================
+   KEYPAD (number buttons 0-9 + CLR + DEL)
+   ============================================= */
+.keypad { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; }
+.kkey {
+  padding: 15px;
+  border-radius: 14px;
+  border: 1.5px solid var(--border);
+  background: var(--surface);
+  color: var(--text); font-size: 18px; font-weight: 700;
+  cursor: pointer;
+  transition: all 0.12s;
+  user-select: none;
+  box-shadow: 0 1px 3px rgba(0,0,0,.06);
+}
+.kkey:hover  { background: var(--adim); border-color: var(--accent); color: var(--accent); }
+.kkey:active { transform: scale(0.93); box-shadow: none; }
+.kkey.kdel   { background: var(--rdim); border-color: var(--red); color: var(--red); }
+.kkey.kclr   { color: var(--muted); background: var(--surface2); }
+
+/* =============================================
+   LOGIN CARD
+   ============================================= */
+.login-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  padding: 40px 32px;
+  width: 100%; max-width: 360px;
+  text-align: center;
+  box-shadow: 0 4px 24px rgba(0,0,0,.08);
+}
+.login-logo {
+  width: 64px; height: 64px;
+  background: linear-gradient(135deg, var(--accent), #ff8a65);
+  border-radius: 20px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 30px;
+  margin: 0 auto 14px;
+  box-shadow: 0 4px 12px rgba(255,87,34,.3);
+}
+.rname  { font-size: 22px; font-weight: 700; margin-bottom: 4px; }
+.rsub   { font-size: 13px; color: var(--muted); margin-bottom: 24px; }
+.login-pdots { display: flex; gap: 10px; justify-content: center; margin-bottom: 20px; }
+.login-pdot {
+  width: 56px; height: 56px;
+  border-radius: 14px;
+  border: 2px solid var(--border);
+  background: var(--bg);
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.15s;
+}
+.login-pdot.f   { border-color: var(--accent); background: var(--adim); }
+.login-pdot.f::after { content: '●'; font-size: 20px; color: var(--accent); }
+.login-pdot.err { border-color: var(--red); background: var(--rdim); animation: shk .35s; }
+.login-err    { font-size: 12px; color: var(--red); min-height: 18px; margin-top: 8px; }
+.login-footer { margin-top: 20px; font-size: 11px; color: var(--muted); }
+
+/* =============================================
+   SET BOSS NAME CARD (first time boss login)
+   ============================================= */
+.setname-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  padding: 40px 36px;
+  width: 100%; max-width: 420px;
+  text-align: center;
+  box-shadow: 0 4px 24px rgba(0,0,0,.08);
+}
+.setname-icon  { font-size: 48px; margin-bottom: 16px; }
+.setname-title { font-size: 20px; font-weight: 700; margin-bottom: 8px; }
+.setname-sub   { font-size: 13px; color: var(--dim); margin-bottom: 28px; line-height: 1.6; }
+
+/* =============================================
+   MAIN APP LAYOUT
+   ============================================= */
+#APP { display: none; flex-direction: column; }
+
+/* Top navigation bar */
+.topbar {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px; height: 58px;
+  display: flex; align-items: center; gap: 14px;
+  position: sticky; top: 0; z-index: 200;
+  box-shadow: 0 1px 4px rgba(0,0,0,.06);
+}
+.tlogo {
+  width: 36px; height: 36px;
+  background: linear-gradient(135deg, var(--accent), #ff8a65);
+  border-radius: 11px;
+  display: flex; align-items: center; justify-content: center; font-size: 18px;
+  box-shadow: 0 2px 6px rgba(255,87,34,.3);
+}
+.tname { font-size: 15px; font-weight: 700; }
+.tsub  { font-size: 11px; color: var(--muted); }
+
+/* Nav links in topbar */
+.tnav-wrap { display: flex; gap: 2px; margin-left: 18px; }
+.tnav {
+  padding: 7px 14px; border-radius: 10px;
+  font-size: 13px; font-weight: 500;
+  color: var(--dim);
+  cursor: pointer; border: none; background: none;
+  transition: all 0.15s;
+}
+.tnav:hover { background: var(--bg); color: var(--text); }
+.tnav.on    { background: var(--adim); color: var(--accent); font-weight: 600; }
+
+/* Right side of topbar */
+.tbr { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+.sdot {
+  display: flex; align-items: center; gap: 6px;
+  padding: 5px 12px;
+  background: var(--gdim); border: 1px solid #86efac;
+  border-radius: 20px; font-size: 11px; color: var(--green); font-weight: 600;
+}
+.pulse {
+  width: 7px; height: 7px;
+  background: var(--green); border-radius: 50%;
+  animation: p 1.5s infinite;
+}
+@keyframes p { 0%,100% { opacity: 1; } 50% { opacity: .3; } }
+
+/* User chip showing role and name */
+.uchip {
+  display: flex; align-items: center; gap: 8px;
+  padding: 5px 12px;
+  background: var(--bg); border: 1.5px solid var(--border);
+  border-radius: 20px; font-size: 12px;
+}
+.uav {
+  width: 26px; height: 26px; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 700;
+}
+.av-admin { background: var(--rdim); color: var(--red); }
+.av-boss  { background: var(--pdim); color: var(--purple); }
+.av-staff { background: var(--gdim); color: var(--green); }
+
+/* Role badge */
+.rbdg { font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 5px; }
+.rb-admin { background: var(--rdim); color: var(--red); }
+.rb-boss  { background: var(--pdim); color: var(--purple); }
+.rb-staff { background: var(--gdim); color: var(--green); }
+
+.logbtn {
+  padding: 6px 14px; border-radius: 9px;
+  border: 1.5px solid var(--border);
+  background: none; color: var(--dim); font-size: 12px;
+  cursor: pointer; font-weight: 500;
+}
+.logbtn:hover { border-color: var(--red); color: var(--red); background: var(--rdim); }
+
+/* =============================================
+   PAGES (Dashboard, Scan, Products, etc.)
+   ============================================= */
+.page { display: none; padding: 24px; flex: 1; }
+.page.on { display: block; }
+.phead {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 20px;
+}
+.ptitle { font-size: 22px; font-weight: 700; }
+.psub   { font-size: 13px; color: var(--muted); margin-top: 2px; }
+
+/* =============================================
+   DASHBOARD STAT CARDS
+   ============================================= */
+.sgrid {
+  display: grid; grid-template-columns: repeat(4,1fr);
+  gap: 12px; margin-bottom: 20px;
+}
+.scard {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px; padding: 16px 18px;
+  box-shadow: 0 1px 4px rgba(0,0,0,.05);
+}
+.sc-label {
+  font-size: 11px; color: var(--muted); font-weight: 600;
+  text-transform: uppercase; letter-spacing: .4px; margin-bottom: 6px;
+}
+.sc-val { font-size: 26px; font-weight: 700; font-family: monospace; }
+
+/* =============================================
+   SCAN PAGE
+   ============================================= */
+.scan-area {
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: 14px; padding: 20px;
+  margin-bottom: 16px;
+  box-shadow: 0 1px 4px rgba(0,0,0,.05);
+}
+.scan-top { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+.sico { font-size: 28px; }
+.scan-row { display: flex; gap: 10px; }
+.scaninp {
+  flex: 1;
+  background: var(--bg); border: 1.5px solid var(--border);
+  border-radius: 12px; padding: 12px 16px;
+  color: var(--text); font-size: 15px;
+  outline: none; font-family: monospace;
+}
+.scaninp:focus { border-color: var(--green); }
+
+/* Product result box after scanning */
+.res-box {
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: 14px; padding: 20px;
+  margin-bottom: 16px; display: none;
+  box-shadow: 0 1px 4px rgba(0,0,0,.05);
+}
+.res-box.on { display: block; animation: fi .2s ease; }
+@keyframes fi { from { opacity:0; transform: translateY(-6px); } to { opacity:1; transform: translateY(0); } }
+.res-head  { display: flex; align-items: center; gap: 14px; margin-bottom: 14px; }
+.res-ico   { width: 50px; height: 50px; border-radius: 12px; background: var(--adim); display: flex; align-items: center; justify-content: center; font-size: 24px; }
+.res-name  { font-size: 17px; font-weight: 700; }
+.res-meta  { font-size: 12px; color: var(--dim); margin-top: 2px; }
+.res-stock { margin-left: auto; text-align: right; }
+.rsv { font-size: 24px; font-weight: 700; font-family: monospace; }
+.rsl { font-size: 11px; color: var(--muted); }
+.act-row { display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap; }
+.fgrp { display: flex; flex-direction: column; gap: 4px; }
+.fgl  { font-size: 11px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .4px; }
+
+/* Unit selector buttons */
+.usel { display: flex; gap: 5px; flex-wrap: wrap; }
+.ubtn {
+  padding: 5px 12px; border-radius: 8px;
+  border: 1.5px solid var(--border);
+  background: var(--surface); color: var(--dim);
+  font-size: 12px; font-weight: 600; cursor: pointer;
+  transition: all .15s;
+}
+.ubtn:hover { border-color: var(--accent); color: var(--accent); }
+.ubtn.on    { background: var(--adim); border-color: var(--accent); color: var(--accent); }
+
+/* Quantity input */
+.qinp {
+  width: 80px;
+  background: var(--bg); border: 1.5px solid var(--border);
+  border-radius: 9px; padding: 7px 10px;
+  color: var(--text); font-size: 14px;
+  outline: none; text-align: center; font-family: monospace;
+}
+.qinp:focus { border-color: var(--accent); }
+
+/* =============================================
+   BUTTONS
+   ============================================= */
+.btn {
+  padding: 9px 20px; border-radius: 10px; border: none;
+  font-size: 13px; font-weight: 600; cursor: pointer;
+  transition: all .15s;
+  display: inline-flex; align-items: center; gap: 6px;
+}
+.btn:hover  { transform: translateY(-1px); box-shadow: 0 3px 8px rgba(0,0,0,.12); }
+.btn:active { transform: scale(.97); }
+.bg  { background: var(--green); color: white; }          /* green - Stock IN */
+.br  { background: var(--red); color: white; }            /* red - Stock OUT / delete */
+.bb  { background: var(--accent); color: white; }         /* orange - primary action */
+.bo  { background: var(--orange); color: white; }         /* amber - warning action */
+.bou { background: var(--surface); border: 1.5px solid var(--border); color: var(--dim); } /* outline */
+.bou:hover { border-color: var(--accent); color: var(--accent); }
+.bda { background: var(--rdim); border: 1.5px solid var(--red); color: var(--red); }
+.bda:hover { background: var(--red); color: white; }
+.bsm { padding: 5px 12px; font-size: 12px; }              /* small button */
+
+/* =============================================
+   TABLES
+   ============================================= */
+.tw {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px; overflow: hidden;
+  margin-bottom: 20px;
+  box-shadow: 0 1px 4px rgba(0,0,0,.05);
+}
+.th2 {
+  padding: 14px 18px;
+  display: flex; align-items: center; justify-content: space-between;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface2);
+}
+.tt { font-size: 14px; font-weight: 700; }
+table { width: 100%; border-collapse: collapse; }
+thead tr { background: var(--surface2); }
+th { padding: 10px 14px; text-align: left; font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .4px; }
+td { padding: 12px 14px; font-size: 13px; border-top: 1px solid var(--border); }
+tr:hover td { background: var(--bg); }
+.srch {
+  background: var(--bg); border: 1.5px solid var(--border);
+  border-radius: 9px; padding: 6px 12px;
+  color: var(--text); font-size: 13px; outline: none; width: 200px;
+}
+.srch:focus { border-color: var(--accent); }
+
+/* Status badges */
+.sbdg { display: inline-flex; align-items: center; gap: 4px; padding: 3px 9px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+.sb-ok  { background: var(--gdim); color: var(--green); }
+.sb-low { background: var(--odim); color: var(--orange); }
+.sb-out { background: var(--rdim); color: var(--red); }
+
+/* Unit tag (PKT, CTN, etc.) */
+.utag { padding: 2px 8px; border-radius: 5px; font-size: 11px; font-weight: 700; background: var(--bdim); color: var(--blue); }
+
+/* Stock number colors */
+.sn   { font-family: monospace; font-size: 14px; font-weight: 700; }
+.sok  { color: var(--green); }
+.slow { color: var(--orange); }
+.sout { color: var(--red); }
+
+/* Product name cell */
+.pname { font-weight: 600; }
+.psup  { font-size: 11px; color: var(--muted); margin-top: 1px; }
+
+/* History row colors */
+.li-in  td:first-child { border-left: 3px solid var(--green); }
+.li-out td:first-child { border-left: 3px solid var(--red); }
+.ltype { display: inline-flex; align-items: center; gap: 4px; padding: 3px 9px; border-radius: 6px; font-size: 11px; font-weight: 700; }
+.lt-in  { background: var(--gdim); color: var(--green); }
+.lt-out { background: var(--rdim); color: var(--red); }
+
+/* Empty state */
+.es { text-align: center; padding: 40px 20px; color: var(--muted); }
+.ei { font-size: 40px; margin-bottom: 10px; }
+
+/* Alert box (low stock warning) */
+.alertbox {
+  background: var(--odim); border: 1px solid #fcd34d;
+  border-radius: 12px; padding: 12px 16px;
+  margin-bottom: 18px;
+  display: flex; align-items: center; gap: 10px; font-size: 13px;
+}
+.alertbox.hidden { display: none; }
+
+/* =============================================
+   MODALS (pop-up dialogs)
+   ============================================= */
+.ov {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,.5);
+  z-index: 500; display: none;
+  align-items: center; justify-content: center;
+  padding: 20px;
+}
+.ov.open { display: flex; animation: fo .2s; }
+@keyframes fo { from { opacity: 0; } to { opacity: 1; } }
+.modal {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  width: 100%; max-width: 500px;
+  overflow: hidden; max-height: 90vh; overflow-y: auto;
+  box-shadow: 0 8px 32px rgba(0,0,0,.15);
+}
+.msm    { max-width: 400px; }
+.mhead  { padding: 18px 22px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; background: var(--surface2); }
+.mtitle { font-size: 15px; font-weight: 700; }
+.mclose { width: 30px; height: 30px; border-radius: 8px; border: 1.5px solid var(--border); background: none; color: var(--dim); cursor: pointer; font-size: 15px; display: flex; align-items: center; justify-content: center; }
+.mclose:hover { background: var(--rdim); color: var(--red); }
+.mbody  { padding: 22px; }
+.mfoot  { padding: 14px 22px; border-top: 1px solid var(--border); display: flex; gap: 8px; justify-content: flex-end; background: var(--surface2); }
+
+/* =============================================
+   SETTINGS PAGE
+   ============================================= */
+.set-section {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px; padding: 20px;
+  margin-bottom: 18px;
+  box-shadow: 0 1px 4px rgba(0,0,0,.04);
+}
+.set-sec-title { font-size: 14px; font-weight: 700; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; padding-bottom: 12px; border-bottom: 1px solid var(--border); }
+.set-row       { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border); }
+.set-row:last-child { border-bottom: none; }
+.set-key { font-size: 13px; font-weight: 600; }
+.set-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
+.set-val { font-size: 13px; color: var(--dim); }
+.reset-banner { margin-top: 16px; padding: 12px 16px; background: var(--rdim); border: 1px solid #fca5a5; border-radius: 10px; font-size: 11px; color: var(--red); display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.reset-btn { padding: 5px 12px; border-radius: 7px; border: 1.5px solid var(--red); background: transparent; color: var(--red); font-size: 11px; cursor: pointer; font-weight: 700; }
+.reset-btn:hover { background: var(--red); color: white; }
+
+/* =============================================
+   ADMIN PAGE
+   ============================================= */
+.admin-grid  { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+.admin-card  { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 18px; box-shadow: 0 1px 4px rgba(0,0,0,.05); }
+.admin-card-title { font-size: 13px; font-weight: 700; margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 7px; }
+.urow { display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: var(--bg); border-radius: 10px; margin-bottom: 8px; }
+.ura  { width: 32px; height: 32px; border-radius: 9px; display: flex; align-items: center; justify-content: center; font-size: 14px; }
+.uri  { flex: 1; }
+.urn  { font-size: 13px; font-weight: 600; }
+.urr  { font-size: 11px; color: var(--muted); margin-top: 1px; }
+
+/* =============================================
+   HISTORY FILTER BUTTONS
+   ============================================= */
+.hf-row { display: flex; gap: 6px; margin-bottom: 14px; }
+.hfbtn { padding: 5px 14px; border-radius: 8px; border: 1.5px solid var(--border); background: var(--surface); color: var(--muted); font-size: 12px; cursor: pointer; font-weight: 500; }
+.hfbtn.on { border-color: var(--accent); color: var(--accent); background: var(--adim); }
+
+/* =============================================
+   TOAST NOTIFICATIONS (bottom right popups)
+   ============================================= */
+.toast-wrap { position: fixed; bottom: 22px; right: 22px; z-index: 9999; display: flex; flex-direction: column; gap: 7px; }
+.toast {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 12px; padding: 12px 16px;
+  font-size: 13px; min-width: 240px;
+  display: flex; align-items: center; gap: 9px;
+  box-shadow: 0 4px 16px rgba(0,0,0,.12);
+  animation: ti .3s ease; pointer-events: none;
+}
+@keyframes ti { from { opacity: 0; transform: translateX(16px); } to { opacity: 1; transform: translateX(0); } }
+.toast.tg { border-color: #86efac; background: var(--gdim); } /* success */
+.toast.tr { border-color: #fca5a5; background: var(--rdim); } /* error */
+.toast.to { border-color: #fcd34d; background: var(--odim); } /* warning */
 </style>
 </head>
 <body>
 
-<!-- LOADING -->
+<!-- =============================================
+     LOADING OVERLAY
+     Shows while waiting for Supabase response
+     ============================================= -->
 <div class="loading-ov" id="LOADING">
   <div class="spinner"></div>
   <div class="loading-txt" id="LOADING-TXT">Connecting...</div>
 </div>
 
-<!-- SETUP WIZARD -->
+<!-- =============================================
+     SCREEN 1: SETUP WIZARD
+     Only shows on first time (no ss_rid in localStorage)
+     ============================================= -->
 <div class="screen center" id="SCR-SETUP">
 <div class="wizard">
   <div class="wiz-head">
@@ -229,54 +628,107 @@ tr:hover td{background:#fafafa;}
     <div class="wiz-title">Welcome to StockScan</div>
     <div class="wiz-sub">First-time setup — takes less than 2 minutes</div>
   </div>
+
+  <!-- Progress bar: 4 steps -->
   <div class="wiz-steps">
-    <div class="wstep active" id="ws0"></div><div class="wstep" id="ws1"></div>
-    <div class="wstep" id="ws2"></div><div class="wstep" id="ws3"></div>
+    <div class="wstep active" id="ws0"></div>
+    <div class="wstep" id="ws1"></div>
+    <div class="wstep" id="ws2"></div>
+    <div class="wstep" id="ws3"></div>
   </div>
+
   <div class="wiz-body">
+    <!-- Step 0: Restaurant Name -->
     <div id="wstep0">
       <div class="step-icon">🏪</div>
       <div class="step-title">Restaurant Name</div>
-      <div class="step-desc">This name will appear on the login screen for all users.</div>
-      <div class="frow"><label class="flbl">Restaurant Name</label><input class="finp" id="w-rname" placeholder="e.g. Kafe Makan Sedap"></div>
+      <div class="step-desc">This name will appear on the login screen.</div>
+      <div class="frow">
+        <label class="flbl">Restaurant Name</label>
+        <input class="finp" id="w-rname" placeholder="e.g. Kafe Makan Sedap">
+      </div>
     </div>
+
+    <!-- Step 1: Admin PIN -->
     <div id="wstep1" style="display:none;">
-      <div class="step-icon">🔴</div><div class="step-title">Set Admin PIN</div>
-      <div class="step-desc">Your personal PIN. Full access to all features.</div>
-      <div class="pin-label" style="margin-bottom:8px;">Enter a 4-digit PIN</div>
-      <div class="pin-row" style="justify-content:center;"><div class="pdot" id="wad0"></div><div class="pdot" id="wad1"></div><div class="pdot" id="wad2"></div><div class="pdot" id="wad3"></div></div>
+      <div class="step-icon">🔴</div>
+      <div class="step-title">Set Admin PIN</div>
+      <div class="step-desc">Full access. Only you should know this PIN.</div>
+      <div class="pin-label">Enter a 4-digit PIN</div>
+      <div class="pin-row">
+        <div class="pdot" id="wad0"></div><div class="pdot" id="wad1"></div>
+        <div class="pdot" id="wad2"></div><div class="pdot" id="wad3"></div>
+      </div>
       <div class="keypad" style="margin-top:14px;">
-        <button class="kkey" onclick="wkp('admin','1')">1</button><button class="kkey" onclick="wkp('admin','2')">2</button><button class="kkey" onclick="wkp('admin','3')">3</button>
-        <button class="kkey" onclick="wkp('admin','4')">4</button><button class="kkey" onclick="wkp('admin','5')">5</button><button class="kkey" onclick="wkp('admin','6')">6</button>
-        <button class="kkey" onclick="wkp('admin','7')">7</button><button class="kkey" onclick="wkp('admin','8')">8</button><button class="kkey" onclick="wkp('admin','9')">9</button>
-        <button class="kkey kclr" onclick="wclr('admin')">CLR</button><button class="kkey" onclick="wkp('admin','0')">0</button><button class="kkey kdel" onclick="wdel('admin')">⌫</button>
+        <button class="kkey" onclick="wkp('admin','1')">1</button>
+        <button class="kkey" onclick="wkp('admin','2')">2</button>
+        <button class="kkey" onclick="wkp('admin','3')">3</button>
+        <button class="kkey" onclick="wkp('admin','4')">4</button>
+        <button class="kkey" onclick="wkp('admin','5')">5</button>
+        <button class="kkey" onclick="wkp('admin','6')">6</button>
+        <button class="kkey" onclick="wkp('admin','7')">7</button>
+        <button class="kkey" onclick="wkp('admin','8')">8</button>
+        <button class="kkey" onclick="wkp('admin','9')">9</button>
+        <button class="kkey kclr" onclick="wclr('admin')">CLR</button>
+        <button class="kkey" onclick="wkp('admin','0')">0</button>
+        <button class="kkey kdel" onclick="wdel('admin')">⌫</button>
       </div>
     </div>
+
+    <!-- Step 2: Boss PIN -->
     <div id="wstep2" style="display:none;">
-      <div class="step-icon">🟣</div><div class="step-title">Set Boss PIN</div>
-      <div class="step-desc">The boss will use this PIN to log in.</div>
-      <div class="pin-label" style="margin-bottom:8px;">Enter a 4-digit PIN</div>
-      <div class="pin-row" style="justify-content:center;"><div class="pdot" id="wbd0"></div><div class="pdot" id="wbd1"></div><div class="pdot" id="wbd2"></div><div class="pdot" id="wbd3"></div></div>
+      <div class="step-icon">🟣</div>
+      <div class="step-title">Set Boss PIN</div>
+      <div class="step-desc">The boss/manager uses this to log in.</div>
+      <div class="pin-label">Enter a 4-digit PIN</div>
+      <div class="pin-row">
+        <div class="pdot" id="wbd0"></div><div class="pdot" id="wbd1"></div>
+        <div class="pdot" id="wbd2"></div><div class="pdot" id="wbd3"></div>
+      </div>
       <div class="keypad" style="margin-top:14px;">
-        <button class="kkey" onclick="wkp('boss','1')">1</button><button class="kkey" onclick="wkp('boss','2')">2</button><button class="kkey" onclick="wkp('boss','3')">3</button>
-        <button class="kkey" onclick="wkp('boss','4')">4</button><button class="kkey" onclick="wkp('boss','5')">5</button><button class="kkey" onclick="wkp('boss','6')">6</button>
-        <button class="kkey" onclick="wkp('boss','7')">7</button><button class="kkey" onclick="wkp('boss','8')">8</button><button class="kkey" onclick="wkp('boss','9')">9</button>
-        <button class="kkey kclr" onclick="wclr('boss')">CLR</button><button class="kkey" onclick="wkp('boss','0')">0</button><button class="kkey kdel" onclick="wdel('boss')">⌫</button>
+        <button class="kkey" onclick="wkp('boss','1')">1</button>
+        <button class="kkey" onclick="wkp('boss','2')">2</button>
+        <button class="kkey" onclick="wkp('boss','3')">3</button>
+        <button class="kkey" onclick="wkp('boss','4')">4</button>
+        <button class="kkey" onclick="wkp('boss','5')">5</button>
+        <button class="kkey" onclick="wkp('boss','6')">6</button>
+        <button class="kkey" onclick="wkp('boss','7')">7</button>
+        <button class="kkey" onclick="wkp('boss','8')">8</button>
+        <button class="kkey" onclick="wkp('boss','9')">9</button>
+        <button class="kkey kclr" onclick="wclr('boss')">CLR</button>
+        <button class="kkey" onclick="wkp('boss','0')">0</button>
+        <button class="kkey kdel" onclick="wdel('boss')">⌫</button>
       </div>
     </div>
+
+    <!-- Step 3: Staff PIN -->
     <div id="wstep3" style="display:none;">
-      <div class="step-icon">🟢</div><div class="step-title">Set Staff PIN</div>
-      <div class="step-desc">All staff share this one PIN to log in.</div>
-      <div class="pin-label" style="margin-bottom:8px;">Enter a 4-digit PIN</div>
-      <div class="pin-row" style="justify-content:center;"><div class="pdot" id="wsd0"></div><div class="pdot" id="wsd1"></div><div class="pdot" id="wsd2"></div><div class="pdot" id="wsd3"></div></div>
+      <div class="step-icon">🟢</div>
+      <div class="step-title">Set Staff PIN</div>
+      <div class="step-desc">All staff share this one PIN to scan stock.</div>
+      <div class="pin-label">Enter a 4-digit PIN</div>
+      <div class="pin-row">
+        <div class="pdot" id="wsd0"></div><div class="pdot" id="wsd1"></div>
+        <div class="pdot" id="wsd2"></div><div class="pdot" id="wsd3"></div>
+      </div>
       <div class="keypad" style="margin-top:14px;">
-        <button class="kkey" onclick="wkp('staff','1')">1</button><button class="kkey" onclick="wkp('staff','2')">2</button><button class="kkey" onclick="wkp('staff','3')">3</button>
-        <button class="kkey" onclick="wkp('staff','4')">4</button><button class="kkey" onclick="wkp('staff','5')">5</button><button class="kkey" onclick="wkp('staff','6')">6</button>
-        <button class="kkey" onclick="wkp('staff','7')">7</button><button class="kkey" onclick="wkp('staff','8')">8</button><button class="kkey" onclick="wkp('staff','9')">9</button>
-        <button class="kkey kclr" onclick="wclr('staff')">CLR</button><button class="kkey" onclick="wkp('staff','0')">0</button><button class="kkey kdel" onclick="wdel('staff')">⌫</button>
+        <button class="kkey" onclick="wkp('staff','1')">1</button>
+        <button class="kkey" onclick="wkp('staff','2')">2</button>
+        <button class="kkey" onclick="wkp('staff','3')">3</button>
+        <button class="kkey" onclick="wkp('staff','4')">4</button>
+        <button class="kkey" onclick="wkp('staff','5')">5</button>
+        <button class="kkey" onclick="wkp('staff','6')">6</button>
+        <button class="kkey" onclick="wkp('staff','7')">7</button>
+        <button class="kkey" onclick="wkp('staff','8')">8</button>
+        <button class="kkey" onclick="wkp('staff','9')">9</button>
+        <button class="kkey kclr" onclick="wclr('staff')">CLR</button>
+        <button class="kkey" onclick="wkp('staff','0')">0</button>
+        <button class="kkey kdel" onclick="wdel('staff')">⌫</button>
       </div>
     </div>
   </div>
+
+  <!-- Wizard navigation buttons -->
   <div class="wiz-foot">
     <button class="btn bou" id="wiz-back" onclick="wizBack()" style="display:none;">← Back</button>
     <button class="btn bb" id="wiz-next" onclick="wizNext()">Next →</button>
@@ -284,81 +736,131 @@ tr:hover td{background:#fafafa;}
 </div>
 </div>
 
-<!-- LOGIN -->
+<!-- =============================================
+     SCREEN 2: LOGIN
+     User enters PIN to log in
+     ============================================= -->
 <div class="screen center" id="SCR-LOGIN">
 <div class="login-card">
   <div class="login-logo">📦</div>
   <div class="rname" id="login-rname">StockScan</div>
   <div class="rsub">Enter your PIN to login</div>
   <div class="login-pdots">
-    <div class="login-pdot" id="lp0"></div><div class="login-pdot" id="lp1"></div>
-    <div class="login-pdot" id="lp2"></div><div class="login-pdot" id="lp3"></div>
+    <div class="login-pdot" id="lp0"></div>
+    <div class="login-pdot" id="lp1"></div>
+    <div class="login-pdot" id="lp2"></div>
+    <div class="login-pdot" id="lp3"></div>
   </div>
   <div class="keypad">
-    <button class="kkey" onclick="lpp('1')">1</button><button class="kkey" onclick="lpp('2')">2</button><button class="kkey" onclick="lpp('3')">3</button>
-    <button class="kkey" onclick="lpp('4')">4</button><button class="kkey" onclick="lpp('5')">5</button><button class="kkey" onclick="lpp('6')">6</button>
-    <button class="kkey" onclick="lpp('7')">7</button><button class="kkey" onclick="lpp('8')">8</button><button class="kkey" onclick="lpp('9')">9</button>
-    <button class="kkey kclr" onclick="lclr()">CLR</button><button class="kkey" onclick="lpp('0')">0</button><button class="kkey kdel" onclick="ldel()">⌫</button>
+    <button class="kkey" onclick="lpp('1')">1</button>
+    <button class="kkey" onclick="lpp('2')">2</button>
+    <button class="kkey" onclick="lpp('3')">3</button>
+    <button class="kkey" onclick="lpp('4')">4</button>
+    <button class="kkey" onclick="lpp('5')">5</button>
+    <button class="kkey" onclick="lpp('6')">6</button>
+    <button class="kkey" onclick="lpp('7')">7</button>
+    <button class="kkey" onclick="lpp('8')">8</button>
+    <button class="kkey" onclick="lpp('9')">9</button>
+    <button class="kkey kclr" onclick="lclr()">CLR</button>
+    <button class="kkey" onclick="lpp('0')">0</button>
+    <button class="kkey kdel" onclick="ldel()">⌫</button>
   </div>
   <div class="login-err" id="login-err"></div>
   <div class="login-footer" id="login-footer"></div>
 </div>
 </div>
 
-<!-- SET NAME -->
+<!-- =============================================
+     SCREEN 3: SET BOSS NAME
+     Shows the first time Boss logs in
+     ============================================= -->
 <div class="screen center" id="SCR-SETNAME">
 <div class="setname-card">
   <div class="setname-icon">👋</div>
   <div class="setname-title">Welcome, Boss!</div>
-  <div class="setname-sub">First time login. Please set your display name.</div>
+  <div class="setname-sub">First time login. Please set your display name so staff can identify you in history.</div>
   <div class="frow" style="text-align:left;">
     <label class="flbl">Your Display Name</label>
-    <input class="finp" id="boss-name-inp" placeholder="e.g. Mr. Ahmad, Owner, Boss Lim...">
+    <input class="finp" id="boss-name-inp" placeholder="e.g. Mr. Ahmad, Boss Lim...">
   </div>
   <button class="btn bb" style="width:100%;margin-top:20px;justify-content:center;" onclick="saveBossName()">✅ Continue</button>
 </div>
 </div>
 
-<!-- MAIN APP -->
+<!-- =============================================
+     MAIN APP (shown after login)
+     ============================================= -->
 <div id="APP" style="display:none;flex-direction:column;min-height:100vh;">
+
+<!-- Top navigation bar -->
 <div class="topbar">
   <div class="tlogo">📦</div>
-  <div><div class="tname" id="app-rname"></div><div class="tsub">Stock Management</div></div>
+  <div>
+    <div class="tname" id="app-rname"></div>
+    <div class="tsub">Stock Management</div>
+  </div>
   <div class="tnav-wrap" id="TNAV"></div>
   <div class="tbr">
     <div class="sdot"><div class="pulse"></div>Live</div>
-    <div class="uchip"><div class="uav" id="UAV"></div><span id="UNAME"></span><span class="rbdg" id="URBDG"></span></div>
+    <div class="uchip">
+      <div class="uav" id="UAV"></div>
+      <span id="UNAME"></span>
+      <span class="rbdg" id="URBDG"></span>
+    </div>
     <button class="logbtn" onclick="doLogout()">⏏ Logout</button>
   </div>
 </div>
 
-<!-- DASHBOARD -->
+<!-- DASHBOARD PAGE -->
 <div class="page" id="pg-dashboard">
-  <div class="phead"><div><div class="ptitle">Dashboard</div><div class="psub">Stock overview &amp; alerts</div></div><button class="btn bb" onclick="showPage('scan')">📷 Start Scanning</button></div>
+  <div class="phead">
+    <div><div class="ptitle">Dashboard</div><div class="psub">Stock overview &amp; alerts</div></div>
+    <button class="btn bb" onclick="showPage('scan')">📷 Start Scanning</button>
+  </div>
   <div class="sgrid" id="SGRID"></div>
-  <div class="alertbox hidden" id="ALERT"><span style="font-size:18px;">⚠️</span><div id="ALERT-TEXT"></div></div>
+  <div class="alertbox hidden" id="ALERT">
+    <span style="font-size:18px;">⚠️</span>
+    <div id="ALERT-TEXT"></div>
+  </div>
   <div class="tw">
     <div class="th2"><div class="tt">⚠️ Items Needing Attention</div></div>
-    <table><thead><tr><th>Product</th><th>Barcode</th><th>Unit</th><th>Stock</th><th>Min. Stock</th><th>Status</th><th>Action</th></tr></thead>
-    <tbody id="LOW-TBL"></tbody></table>
+    <table>
+      <thead><tr><th>Product</th><th>Barcode</th><th>Unit</th><th>Stock</th><th>Min. Stock</th><th>Status</th><th>Action</th></tr></thead>
+      <tbody id="LOW-TBL"></tbody>
+    </table>
   </div>
 </div>
 
-<!-- SCAN -->
+<!-- SCAN PAGE -->
 <div class="page" id="pg-scan">
-  <div class="phead"><div><div class="ptitle">Scan Barcode</div><div class="psub">USB / Bluetooth scanner or type + Enter</div></div></div>
+  <div class="phead">
+    <div><div class="ptitle">Scan Barcode</div><div class="psub">USB / Bluetooth scanner or type + Enter</div></div>
+  </div>
   <div class="scan-area" id="SCAN-AREA">
-    <div class="scan-top"><div class="sico">🔍</div><div><div style="font-size:14px;font-weight:700;">Ready to Scan</div><div style="font-size:12px;color:var(--muted);margin-top:2px;">Scan barcode or type, then press Enter</div></div></div>
+    <div class="scan-top">
+      <div class="sico">🔍</div>
+      <div>
+        <div style="font-size:14px;font-weight:700;">Ready to Scan</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:2px;">Scan barcode or type, then press Enter</div>
+      </div>
+    </div>
     <div class="scan-row">
       <input class="scaninp" id="SCAN-INP" placeholder="Scan or type barcode..." onkeydown="if(event.key==='Enter')doScan()">
       <button class="btn bb" onclick="doScan()">🔍 Scan</button>
     </div>
   </div>
+  <!-- Product result shows here after scan -->
   <div class="res-box" id="RES-BOX">
     <div class="res-head">
       <div class="res-ico" id="R-ICO">📦</div>
-      <div><div class="res-name" id="R-NAME">–</div><div class="res-meta" id="R-META">–</div></div>
-      <div class="res-stock"><div class="rsv" id="R-SV">–</div><div class="rsl">Current Stock</div></div>
+      <div>
+        <div class="res-name" id="R-NAME">–</div>
+        <div class="res-meta" id="R-META">–</div>
+      </div>
+      <div class="res-stock">
+        <div class="rsv" id="R-SV">–</div>
+        <div class="rsl">Current Stock</div>
+      </div>
     </div>
     <div class="act-row">
       <div class="fgrp"><div class="fgl">Unit</div><div class="usel" id="USEL"></div></div>
@@ -374,78 +876,101 @@ tr:hover td{background:#fafafa;}
   </div>
   <div class="tw">
     <div class="th2"><div class="tt">Recent Activity</div></div>
-    <table><thead><tr><th>Time</th><th>Product</th><th>Barcode</th><th>Type</th><th>Qty</th><th>Unit</th><th>Stock After</th><th>By</th></tr></thead>
-    <tbody id="RECENT-TBL"></tbody></table>
+    <table>
+      <thead><tr><th>Time</th><th>Product</th><th>Barcode</th><th>Type</th><th>Qty</th><th>Unit</th><th>Stock After</th><th>By</th></tr></thead>
+      <tbody id="RECENT-TBL"></tbody>
+    </table>
   </div>
 </div>
 
-<!-- PRODUCTS -->
+<!-- PRODUCTS PAGE -->
 <div class="page" id="pg-products">
-  <div class="phead"><div><div class="ptitle">Products</div><div class="psub">Manage products &amp; stock levels</div></div><div id="ADD-PROD-BTN"></div></div>
+  <div class="phead">
+    <div><div class="ptitle">Products</div><div class="psub">Manage products &amp; stock levels</div></div>
+    <div id="ADD-PROD-BTN"></div>
+  </div>
   <div class="tw">
-    <div class="th2"><div class="tt">Product List</div><input class="srch" id="PROD-SRCH" placeholder="Search..." oninput="renderProds()"></div>
-    <table><thead><tr><th>Product</th><th>Barcode</th><th>Supplier</th><th>Unit</th><th>Stock</th><th>Min. Stock</th><th>Status</th><th>Actions</th></tr></thead>
-    <tbody id="PROD-TBL"></tbody></table>
+    <div class="th2">
+      <div class="tt">Product List</div>
+      <input class="srch" id="PROD-SRCH" placeholder="Search..." oninput="renderProds()">
+    </div>
+    <table>
+      <thead><tr><th>Product</th><th>Barcode</th><th>Supplier</th><th>Unit</th><th>Stock</th><th>Min. Stock</th><th>Status</th><th>Actions</th></tr></thead>
+      <tbody id="PROD-TBL"></tbody>
+    </table>
   </div>
 </div>
 
-<!-- HISTORY -->
+<!-- HISTORY PAGE -->
 <div class="page" id="pg-history">
-  <div class="phead"><div><div class="ptitle">Stock History</div><div class="psub" id="hist-sub">Full transaction log</div></div><button class="btn bou bsm" id="CLR-HIST-BTN" onclick="clrHist()" style="display:none;">🗑 Clear</button></div>
+  <div class="phead">
+    <div><div class="ptitle">Stock History</div><div class="psub" id="hist-sub">Full transaction log</div></div>
+    <button class="btn bou bsm" id="CLR-HIST-BTN" onclick="clrHist()" style="display:none;">🗑 Clear</button>
+  </div>
   <div class="hf-row">
     <button class="hfbtn on" onclick="fhist('all',this)">All</button>
     <button class="hfbtn" onclick="fhist('IN',this)">Stock IN</button>
     <button class="hfbtn" onclick="fhist('OUT',this)">Stock OUT</button>
   </div>
   <div class="tw">
-    <table><thead><tr><th>Date &amp; Time</th><th>Product</th><th>Barcode</th><th>Type</th><th>Qty</th><th>Unit</th><th>Before</th><th>After</th><th>By</th></tr></thead>
-    <tbody id="HIST-TBL"></tbody></table>
+    <table>
+      <thead><tr><th>Date &amp; Time</th><th>Product</th><th>Barcode</th><th>Type</th><th>Qty</th><th>Unit</th><th>Before</th><th>After</th><th>By</th></tr></thead>
+      <tbody id="HIST-TBL"></tbody>
+    </table>
   </div>
 </div>
 
-<!-- SETTINGS -->
+<!-- SETTINGS PAGE -->
 <div class="page" id="pg-settings">
   <div class="phead"><div><div class="ptitle">Settings</div><div class="psub">System configuration</div></div></div>
   <div class="set-section">
     <div class="set-sec-title">🏪 Restaurant</div>
     <div class="set-row">
       <div><div class="set-key">Restaurant Name</div><div class="set-sub">Shown on login screen</div></div>
-      <div style="display:flex;align-items:center;gap:10px;"><span class="set-val" id="SET-RNAME"></span><button class="btn bou bsm" onclick="openSetModal('rname')">✏️ Edit</button></div>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span class="set-val" id="SET-RNAME"></span>
+        <button class="btn bou bsm" onclick="openSetModal('rname')">✏️ Edit</button>
+      </div>
     </div>
   </div>
+  <!-- Admin only: PIN management -->
   <div class="set-section" id="SET-PINS-SECTION">
     <div class="set-sec-title">🔐 PIN Management</div>
     <div class="set-row">
       <div><div class="set-key">🔴 Admin PIN</div></div>
-      <div style="display:flex;align-items:center;gap:10px;"><span style="font-family:monospace;letter-spacing:4px;color:var(--dim);">••••</span><button class="btn bou bsm" onclick="openSetModal('admin-pin')">🔐 Change</button></div>
+      <button class="btn bou bsm" onclick="openSetModal('admin-pin')">🔐 Change</button>
     </div>
     <div class="set-row">
       <div><div class="set-key">🟣 Boss PIN</div></div>
-      <div style="display:flex;align-items:center;gap:10px;"><span style="font-family:monospace;letter-spacing:4px;color:var(--dim);">••••</span><button class="btn bou bsm" onclick="openSetModal('boss-pin')">🔐 Change</button></div>
+      <button class="btn bou bsm" onclick="openSetModal('boss-pin')">🔐 Change</button>
     </div>
     <div class="set-row">
       <div><div class="set-key">🟢 Staff PIN</div></div>
-      <div style="display:flex;align-items:center;gap:10px;"><span style="font-family:monospace;letter-spacing:4px;color:var(--dim);">••••</span><button class="btn bou bsm" onclick="openSetModal('staff-pin')">🔐 Change</button></div>
+      <button class="btn bou bsm" onclick="openSetModal('staff-pin')">🔐 Change</button>
     </div>
     <div class="reset-banner">
-      <span>⚠️ <strong>Factory Reset</strong> — clears ALL local data. Use to reinstall for a new restaurant.</span>
+      <span>⚠️ <strong>Factory Reset</strong> — removes this device from the restaurant. Database data stays.</span>
       <button class="reset-btn" onclick="factoryReset()">🗑 Reset</button>
     </div>
   </div>
+  <!-- Boss only: account settings -->
   <div class="set-section" id="SET-BOSS-SECTION">
     <div class="set-sec-title">👤 My Account</div>
     <div class="set-row">
       <div><div class="set-key">Display Name</div><div class="set-sub" id="SET-BOSS-NAME-SUB"></div></div>
-      <div style="display:flex;align-items:center;gap:10px;"><span class="set-val" id="SET-BOSS-NAME"></span><button class="btn bou bsm" onclick="openSetModal('boss-name')">✏️ Edit</button></div>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span class="set-val" id="SET-BOSS-NAME"></span>
+        <button class="btn bou bsm" onclick="openSetModal('boss-name')">✏️ Edit</button>
+      </div>
     </div>
     <div class="set-row">
       <div><div class="set-key">My PIN</div></div>
-      <div><button class="btn bou bsm" onclick="openSetModal('my-pin')">🔐 Change</button></div>
+      <button class="btn bou bsm" onclick="openSetModal('my-pin')">🔐 Change</button>
     </div>
   </div>
 </div>
 
-<!-- ADMIN PANEL -->
+<!-- ADMIN PANEL PAGE -->
 <div class="page" id="pg-admin">
   <div class="phead"><div><div class="ptitle">🔴 Admin Panel</div><div class="psub">System info &amp; users</div></div></div>
   <div class="admin-grid">
@@ -456,7 +981,7 @@ tr:hover td{background:#fafafa;}
     <div class="admin-card">
       <div class="admin-card-title">⚙️ System Info</div>
       <div style="display:flex;flex-direction:column;gap:7px;">
-        <div style="display:flex;justify-content:space-between;font-size:13px;padding:8px 10px;background:var(--surface2);border-radius:7px;"><span style="color:var(--muted);">Version</span><span style="font-weight:600;">v1.0.2</span></div>
+        <div style="display:flex;justify-content:space-between;font-size:13px;padding:8px 10px;background:var(--surface2);border-radius:7px;"><span style="color:var(--muted);">Version</span><span style="font-weight:600;">v2.0.0</span></div>
         <div style="display:flex;justify-content:space-between;font-size:13px;padding:8px 10px;background:var(--surface2);border-radius:7px;"><span style="color:var(--muted);">Restaurant ID</span><span id="A-RID" style="font-weight:600;color:var(--muted);font-size:10px;font-family:monospace;">–</span></div>
         <div style="display:flex;justify-content:space-between;font-size:13px;padding:8px 10px;background:var(--surface2);border-radius:7px;"><span style="color:var(--muted);">Products</span><span id="A-PRODS" style="font-weight:600;color:var(--blue);">–</span></div>
         <div style="display:flex;justify-content:space-between;font-size:13px;padding:8px 10px;background:var(--surface2);border-radius:7px;"><span style="color:var(--muted);">Transactions</span><span id="A-TXN" style="font-weight:600;color:var(--green);">–</span></div>
@@ -466,66 +991,115 @@ tr:hover td{background:#fafafa;}
     </div>
   </div>
 </div>
-</div><!-- /APP -->
 
-<!-- MODALS -->
+</div><!-- end #APP -->
+
+<!-- =============================================
+     MODALS (pop-up dialogs)
+     ============================================= -->
+
+<!-- Settings edit modal -->
 <div class="ov" id="SET-MODAL"><div class="modal msm">
-  <div class="mhead"><div class="mtitle" id="SET-MODAL-TITLE">Edit</div><button class="mclose" onclick="closeSetModal()">✕</button></div>
+  <div class="mhead">
+    <div class="mtitle" id="SET-MODAL-TITLE">Edit</div>
+    <button class="mclose" onclick="closeSetModal()">✕</button>
+  </div>
   <div class="mbody" id="SET-MODAL-BODY"></div>
-  <div class="mfoot"><button class="btn bou" onclick="closeSetModal()">Cancel</button><button class="btn bb" onclick="saveSetModal()">💾 Save</button></div>
+  <div class="mfoot">
+    <button class="btn bou" onclick="closeSetModal()">Cancel</button>
+    <button class="btn bb" onclick="saveSetModal()">💾 Save</button>
+  </div>
 </div></div>
 
+<!-- Add/Edit product modal -->
 <div class="ov" id="PROD-MODAL"><div class="modal">
-  <div class="mhead"><div class="mtitle" id="PROD-MODAL-TITLE">Add Product</div><button class="mclose" onclick="closeProdModal()">✕</button></div>
+  <div class="mhead">
+    <div class="mtitle" id="PROD-MODAL-TITLE">Add Product</div>
+    <button class="mclose" onclick="closeProdModal()">✕</button>
+  </div>
   <div class="mbody">
     <input type="hidden" id="EDIT-ID">
     <div class="frow"><label class="flbl">Product Name *</label><input class="finp" id="F-NAME" placeholder="e.g. Milo 1kg"></div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
       <div class="frow"><label class="flbl">Barcode *</label><input class="finp" id="F-BC" placeholder="e.g. BC001"></div>
-      <div class="frow"><label class="flbl">Unit *</label><select class="finp" id="F-UNIT">
-        <option value="PKT">PKT – Packet</option><option value="CTN">CTN – Carton</option><option value="BOX">BOX – Box</option>
-        <option value="KG">KG – Kilogram</option><option value="PCS">PCS – Pieces</option><option value="BTL">BTL – Bottle</option>
-        <option value="BAG">BAG – Bag</option><option value="TIN">TIN – Tin</option>
-      </select></div>
+      <div class="frow"><label class="flbl">Unit *</label>
+        <select class="finp" id="F-UNIT">
+          <option value="PKT">PKT – Packet</option>
+          <option value="CTN">CTN – Carton</option>
+          <option value="BOX">BOX – Box</option>
+          <option value="KG">KG – Kilogram</option>
+          <option value="PCS">PCS – Pieces</option>
+          <option value="BTL">BTL – Bottle</option>
+          <option value="BAG">BAG – Bag</option>
+          <option value="TIN">TIN – Tin</option>
+        </select>
+      </div>
     </div>
     <div class="frow"><label class="flbl">Supplier</label><input class="finp" id="F-SUP" placeholder="e.g. Nestle Malaysia"></div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
       <div class="frow"><label class="flbl">Opening Stock</label><input class="finp" type="number" id="F-STOCK" placeholder="0" min="0"></div>
       <div class="frow"><label class="flbl">Minimum Stock ⚠️</label><input class="finp" type="number" id="F-MIN" placeholder="10" min="0"></div>
     </div>
-    <div class="frow"><label class="flbl">Category</label><select class="finp" id="F-CAT">
-      <option>Beverages</option><option>Dry Goods</option><option>Condiments</option><option>Dairy</option>
-      <option>Frozen</option><option>Fresh</option><option>Packaging</option><option>Cleaning</option><option>Others</option>
-    </select></div>
+    <div class="frow"><label class="flbl">Category</label>
+      <select class="finp" id="F-CAT">
+        <option>Beverages</option><option>Dry Goods</option><option>Condiments</option>
+        <option>Dairy</option><option>Frozen</option><option>Fresh</option>
+        <option>Packaging</option><option>Cleaning</option><option>Others</option>
+      </select>
+    </div>
   </div>
-  <div class="mfoot"><button class="btn bou" onclick="closeProdModal()">Cancel</button><button class="btn bb" onclick="saveProd()">💾 Save</button></div>
+  <div class="mfoot">
+    <button class="btn bou" onclick="closeProdModal()">Cancel</button>
+    <button class="btn bb" onclick="saveProd()">💾 Save</button>
+  </div>
 </div></div>
 
+<!-- Set minimum stock modal -->
 <div class="ov" id="MIN-MODAL"><div class="modal msm">
-  <div class="mhead"><div class="mtitle">Set Minimum Stock ⚠️</div><button class="mclose" onclick="closeMinModal()">✕</button></div>
+  <div class="mhead">
+    <div class="mtitle">Set Minimum Stock ⚠️</div>
+    <button class="mclose" onclick="closeMinModal()">✕</button>
+  </div>
   <div class="mbody">
     <div style="font-size:14px;font-weight:600;margin-bottom:3px;" id="MIN-PNAME"></div>
     <div style="font-size:12px;color:var(--muted);margin-bottom:16px;" id="MIN-PINFO"></div>
     <div class="frow"><label class="flbl">Minimum Stock Level</label><input class="finp" type="number" id="MIN-VAL" min="0"></div>
   </div>
-  <div class="mfoot"><button class="btn bou" onclick="closeMinModal()">Cancel</button><button class="btn bo" onclick="saveMin()">⚠️ Set</button></div>
+  <div class="mfoot">
+    <button class="btn bou" onclick="closeMinModal()">Cancel</button>
+    <button class="btn bo" onclick="saveMin()">⚠️ Set</button>
+  </div>
 </div></div>
 
+<!-- Delete product confirmation modal -->
 <div class="ov" id="DEL-MODAL"><div class="modal msm">
-  <div class="mhead"><div class="mtitle" style="color:var(--red);">Delete Product</div><button class="mclose" onclick="closeDelModal()">✕</button></div>
-  <div class="mbody"><p style="font-size:14px;color:var(--dim);line-height:1.7;">Delete <strong id="DEL-NAME"></strong>? This cannot be undone.</p></div>
-  <div class="mfoot"><button class="btn bou" onclick="closeDelModal()">Cancel</button><button class="btn bda" onclick="confDel()">🗑 Delete</button></div>
+  <div class="mhead">
+    <div class="mtitle" style="color:var(--red);">Delete Product</div>
+    <button class="mclose" onclick="closeDelModal()">✕</button>
+  </div>
+  <div class="mbody">
+    <p style="font-size:14px;color:var(--dim);line-height:1.7;">Delete <strong id="DEL-NAME"></strong>? This cannot be undone.</p>
+  </div>
+  <div class="mfoot">
+    <button class="btn bou" onclick="closeDelModal()">Cancel</button>
+    <button class="btn bda" onclick="confDel()">🗑 Delete</button>
+  </div>
 </div></div>
 
+<!-- Toast notification container -->
 <div class="toast-wrap" id="TOASTS"></div>
 
 <script>
-// ══════════════════════════════════════
+// =============================================
 //  SUPABASE CONFIG
-// ══════════════════════════════════════
+//  Change SB_URL and SB_KEY if you move to a new project
+// =============================================
 var SB_URL = 'https://kdmzwgdyaylutumwnbtj.supabase.co';
 var SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtkbXp3Z2R5YXlsdXR1bXduYnRqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM3MjQwODIsImV4cCI6MjA4OTMwMDA4Mn0.F23mqc-wBzePjRhkomzYaXX8RcxJ75KyotTjBicBV7Y';
 
+// Generic function to call Supabase REST API
+// path = table name + filters, e.g. 'products?restaurant_id=eq.123'
+// opts = { method, body, prefer }
 async function sbFetch(path, opts) {
   opts = opts || {};
   var res = await fetch(SB_URL + '/rest/v1/' + path, {
@@ -543,48 +1117,64 @@ async function sbFetch(path, opts) {
   return txt ? JSON.parse(txt) : [];
 }
 
-// ══════════════════════════════════════
-//  STATE
-// ══════════════════════════════════════
-var RID      = localStorage.getItem('ss_rid');
-var CFG      = {};
-var products = [];
-var txLog    = [];
-var CU       = null;
-var curProd  = null;
-var selUnit  = '';
-var editMinId   = null;
-var deletingId  = null;
-var setModalType = '';
-var hfilt    = 'all';
+// =============================================
+//  APP STATE
+//  These variables hold all data in memory
+// =============================================
+var RID      = localStorage.getItem('ss_rid'); // restaurant ID saved on this device
+var CFG      = {};       // restaurant config: name, PINs, boss info
+var products = [];       // all products for this restaurant
+var txLog    = [];       // transaction history (last 200)
+var CU       = null;     // current logged-in user { role, name }
+var curProd  = null;     // product currently shown in scan result box
+var selUnit  = '';       // selected unit in scan page
+var editMinId   = null;  // product ID being edited in min-stock modal
+var deletingId  = null;  // product ID being deleted
+var setModalType = '';   // which setting is being edited
+var hfilt    = 'all';   // history filter: 'all', 'IN', 'OUT'
 
-// ══════════════════════════════════════
-//  LOADING
-// ══════════════════════════════════════
-function showLoading(t){ document.getElementById('LOADING-TXT').textContent=t||'Loading...'; document.getElementById('LOADING').classList.add('on'); }
-function hideLoading(){ document.getElementById('LOADING').classList.remove('on'); }
+// =============================================
+//  LOADING HELPERS
+// =============================================
+function showLoading(t) {
+  document.getElementById('LOADING-TXT').textContent = t || 'Loading...';
+  document.getElementById('LOADING').classList.add('on');
+}
+function hideLoading() {
+  document.getElementById('LOADING').classList.remove('on');
+}
 
-// ══════════════════════════════════════
-//  SCREEN
-// ══════════════════════════════════════
-function showScreen(id){ document.querySelectorAll('.screen').forEach(function(s){s.classList.remove('on');}); var s=document.getElementById(id); if(s)s.classList.add('on'); }
+// =============================================
+//  SCREEN SWITCHER
+//  Only one screen shows at a time
+// =============================================
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(function(s) { s.classList.remove('on'); });
+  var s = document.getElementById(id);
+  if (s) s.classList.add('on');
+}
 
-// ══════════════════════════════════════
+// =============================================
 //  INIT
-// ══════════════════════════════════════
+//  Runs on page load. Checks if restaurant is registered.
+//  If yes → show login. If no → show setup wizard.
+// =============================================
 async function init() {
   showLoading('Connecting to database...');
   try {
     if (RID) {
-      var rRows = await sbFetch('restaurants?id=eq.'+RID+'&select=*');
+      // Device has a saved restaurant ID — load it from Supabase
+      var rRows = await sbFetch('restaurants?id=eq.' + RID + '&select=*');
       if (rRows && rRows.length > 0) {
+        // Load restaurant info
         CFG.restaurantName = rRows[0].name;
         CFG.restaurantId   = rRows[0].id;
-        var uRows = await sbFetch('users?restaurant_id=eq.'+RID+'&select=*');
-        uRows.forEach(function(u){
-          if(u.role==='admin') CFG.adminPin=u.pin;
-          if(u.role==='boss')  { CFG.bossPin=u.pin; CFG.bossName=u.name||''; CFG.bossNameSet=!!u.name; CFG.bossId=u.id; }
-          if(u.role==='staff') CFG.staffPin=u.pin;
+        // Load all users (admin, boss, staff)
+        var uRows = await sbFetch('users?restaurant_id=eq.' + RID + '&select=*');
+        uRows.forEach(function(u) {
+          if (u.role === 'admin') CFG.adminPin = u.pin;
+          if (u.role === 'boss')  { CFG.bossPin = u.pin; CFG.bossName = u.name || ''; CFG.bossNameSet = !!u.name; CFG.bossId = u.id; }
+          if (u.role === 'staff') CFG.staffPin = u.pin;
         });
         document.getElementById('login-rname').textContent  = CFG.restaurantName;
         document.getElementById('login-footer').textContent = '© ' + CFG.restaurantName;
@@ -593,462 +1183,731 @@ async function init() {
         return;
       }
     }
-  } catch(e) { toast('⚠️ DB error: '+e.message,'to'); }
+  } catch(e) {
+    toast('⚠️ Cannot connect to database: ' + e.message, 'tr');
+  }
+  // No registered restaurant — show setup wizard
   hideLoading();
   wizUpdateSteps();
   showScreen('SCR-SETUP');
 }
 
-// ══════════════════════════════════════
+// =============================================
 //  FACTORY RESET
-// ══════════════════════════════════════
-function factoryReset(){
-  if(!confirm('⚠️ Factory Reset: remove this device registration?\n\nDatabase data will remain. Only this device will forget the restaurant.')) return;
+//  Removes device registration (clears ss_rid)
+//  Database data is NOT deleted
+// =============================================
+function factoryReset() {
+  if (!confirm('Remove this device from the restaurant?\n\nDatabase data will remain. This device will go back to setup.')) return;
   localStorage.removeItem('ss_rid');
-  toast('Reset done. Reloading...','tr');
-  setTimeout(function(){ location.reload(); },1500);
+  toast('Reset done. Reloading...', 'tr');
+  setTimeout(function() { location.reload(); }, 1500);
 }
 
-// ══════════════════════════════════════
-//  WIZARD
-// ══════════════════════════════════════
-var wizStep=0;
-var wPins={admin:'',adminC:'',boss:'',bossC:'',staff:'',staffC:''};
-var wAdminDone=false,wBossDone=false,wStaffDone=false;
-var wConf={admin:false,boss:false,staff:false};
+// =============================================
+//  SETUP WIZARD
+// =============================================
+var wizStep = 0;
+// Stores PINs entered during setup
+var wPins = { admin: '', boss: '', staff: '' };
+// Tracks if each PIN is fully entered (4 digits)
+var wAdminDone = false, wBossDone = false, wStaffDone = false;
 
-function wizUpdateSteps(){
-  for(var i=0;i<4;i++){var el=document.getElementById('ws'+i);el.className='wstep'+(i<wizStep?' done':i===wizStep?' active':'');}
-  document.getElementById('wiz-back').style.display=wizStep>0?'inline-flex':'none';
-  for(var j=0;j<4;j++) document.getElementById('wstep'+j).style.display=j===wizStep?'block':'none';
-  document.getElementById('wiz-next').textContent=wizStep===3?'🚀 Start System':'Next →';
+// Update step bar and show correct step content
+function wizUpdateSteps() {
+  for (var i = 0; i < 4; i++) {
+    var el = document.getElementById('ws' + i);
+    el.className = 'wstep' + (i < wizStep ? ' done' : i === wizStep ? ' active' : '');
+  }
+  document.getElementById('wiz-back').style.display = wizStep > 0 ? 'inline-flex' : 'none';
+  for (var j = 0; j < 4; j++) {
+    document.getElementById('wstep' + j).style.display = j === wizStep ? 'block' : 'none';
+  }
+  document.getElementById('wiz-next').textContent = wizStep === 3 ? '🚀 Start System' : 'Next →';
 }
 
-async function wizNext(){
-  if(wizStep===0){
-    var rn=document.getElementById('w-rname').value.trim();
-    if(!rn){toast('⚠️ Please enter restaurant name','to');return;}
-    wizStep=1;wizUpdateSteps();
-  } else if(wizStep===1){
-    if(!wAdminDone){toast('⚠️ Please set Admin PIN','to');return;}
-    wizStep=2;wizUpdateSteps();
-  } else if(wizStep===2){
-    if(!wBossDone){toast('⚠️ Please set Boss PIN','to');return;}
-    if(wPins.boss===wPins.admin){toast('❌ Boss PIN must be different from Admin PIN','tr');wBossDone=false;wPins.boss='';rdotsW('wbd','');return;}
-    wizStep=3;wizUpdateSteps();
+// Next button handler
+async function wizNext() {
+  if (wizStep === 0) {
+    // Validate restaurant name
+    var rn = document.getElementById('w-rname').value.trim();
+    if (!rn) { toast('⚠️ Please enter restaurant name', 'to'); return; }
+    wizStep = 1; wizUpdateSteps();
+
+  } else if (wizStep === 1) {
+    // Validate admin PIN entered
+    if (!wAdminDone) { toast('⚠️ Please enter Admin PIN', 'to'); return; }
+    wizStep = 2; wizUpdateSteps();
+
+  } else if (wizStep === 2) {
+    // Validate boss PIN and check not same as admin
+    if (!wBossDone) { toast('⚠️ Please enter Boss PIN', 'to'); return; }
+    if (wPins.boss === wPins.admin) {
+      toast('❌ Boss PIN must be different from Admin PIN', 'tr');
+      wBossDone = false; wPins.boss = ''; rdotsW('wbd', '');
+      return;
+    }
+    wizStep = 3; wizUpdateSteps();
+
   } else {
-    if(!wStaffDone){toast('⚠️ Please set Staff PIN','to');return;}
-    if(wPins.staff===wPins.admin||wPins.staff===wPins.boss){toast('❌ Staff PIN must be different from Admin & Boss PIN','tr');wStaffDone=false;wPins.staff='';rdotsW('wsd','');return;}
+    // Validate staff PIN and check not same as admin or boss
+    if (!wStaffDone) { toast('⚠️ Please enter Staff PIN', 'to'); return; }
+    if (wPins.staff === wPins.admin || wPins.staff === wPins.boss) {
+      toast('❌ Staff PIN must be different from Admin & Boss PIN', 'tr');
+      wStaffDone = false; wPins.staff = ''; rdotsW('wsd', '');
+      return;
+    }
+
+    // All good — register restaurant in Supabase
     showLoading('Registering restaurant...');
     try {
-      var rname=document.getElementById('w-rname').value.trim();
-      var rRows=await sbFetch('restaurants',{method:'POST',body:{name:rname}});
-      var rid=rRows[0].id;
-      await sbFetch('users',{method:'POST',body:{restaurant_id:rid,role:'admin',name:'Admin',pin:wPins.admin}});
-      await sbFetch('users',{method:'POST',body:{restaurant_id:rid,role:'boss', name:null,   pin:wPins.boss}});
-      await sbFetch('users',{method:'POST',body:{restaurant_id:rid,role:'staff',name:'Staff', pin:wPins.staff}});
-      localStorage.setItem('ss_rid',rid);
-      RID=rid;
-      CFG={restaurantName:rname,restaurantId:rid,adminPin:wPins.admin,bossPin:wPins.boss,staffPin:wPins.staff,bossName:'',bossNameSet:false};
+      var rname = document.getElementById('w-rname').value.trim();
+      // Create restaurant record
+      var rRows = await sbFetch('restaurants', { method: 'POST', body: { name: rname } });
+      var rid = rRows[0].id;
+      // Create 3 user records (admin, boss, staff)
+      await sbFetch('users', { method: 'POST', body: { restaurant_id: rid, role: 'admin', name: 'Admin', pin: wPins.admin } });
+      await sbFetch('users', { method: 'POST', body: { restaurant_id: rid, role: 'boss',  name: null,    pin: wPins.boss } });
+      await sbFetch('users', { method: 'POST', body: { restaurant_id: rid, role: 'staff', name: 'Staff', pin: wPins.staff } });
+      // Save restaurant ID to this device
+      localStorage.setItem('ss_rid', rid);
+      RID = rid;
+      CFG = { restaurantName: rname, restaurantId: rid, adminPin: wPins.admin, bossPin: wPins.boss, staffPin: wPins.staff, bossName: '', bossNameSet: false };
       hideLoading();
-      toast('✅ Restaurant registered!','tg');
-      document.getElementById('login-rname').textContent=rname;
-      document.getElementById('login-footer').textContent='© '+rname;
+      toast('✅ Restaurant registered!', 'tg');
+      document.getElementById('login-rname').textContent  = rname;
+      document.getElementById('login-footer').textContent = '© ' + rname;
       showScreen('SCR-LOGIN');
-    } catch(e){ hideLoading(); toast('❌ Registration failed: '+e.message,'tr'); }
+    } catch(e) {
+      hideLoading();
+      toast('❌ Registration failed: ' + e.message, 'tr');
+    }
   }
 }
 
-function wizBack(){
-  // Reset current step PIN before going back
-  if(wizStep===1){wAdminDone=false;wPins.admin='';rdotsW('wad','');}
-  else if(wizStep===2){wBossDone=false;wPins.boss='';rdotsW('wbd','');} 
-  else if(wizStep===3){wStaffDone=false;wPins.staff='';rdotsW('wsd','');}
-  if(wizStep>0){wizStep--;wizUpdateSteps();}
-  // Also reset the step we go back to
-  if(wizStep===1){wAdminDone=false;wPins.admin='';rdotsW('wad','');}
-  else if(wizStep===2){wBossDone=false;wPins.boss='';rdotsW('wbd','');}
-  else if(wizStep===3){wStaffDone=false;wPins.staff='';rdotsW('wsd','');}
+// Back button — go to previous step and reset that step's PIN
+function wizBack() {
+  if (wizStep === 1) { wAdminDone = false; wPins.admin = ''; rdotsW('wad', ''); }
+  else if (wizStep === 2) { wBossDone = false; wPins.boss = ''; rdotsW('wbd', ''); }
+  else if (wizStep === 3) { wStaffDone = false; wPins.staff = ''; rdotsW('wsd', ''); }
+  if (wizStep > 0) { wizStep--; wizUpdateSteps(); }
+  // Also reset the step we land on
+  if (wizStep === 1) { wAdminDone = false; wPins.admin = ''; rdotsW('wad', ''); }
+  else if (wizStep === 2) { wBossDone = false; wPins.boss = ''; rdotsW('wbd', ''); }
+  else if (wizStep === 3) { wStaffDone = false; wPins.staff = ''; rdotsW('wsd', ''); }
 }
 
-// wizard PIN: fill PIN, show checkmark, user presses Next manually
-function wkp(who,d){
-  var done=(who==='admin'&&wAdminDone)||(who==='boss'&&wBossDone)||(who==='staff'&&wStaffDone);
-  if(done)return;
-  if(who==='admin'){if(wPins.admin.length<4){wPins.admin+=d;rdotsW('wad',wPins.admin);if(wPins.admin.length===4){wAdminDone=true;for(var i=0;i<4;i++)document.getElementById('wad'+i).className='pdot ok';}}}
-  else if(who==='boss'){if(wPins.boss.length<4){wPins.boss+=d;rdotsW('wbd',wPins.boss);if(wPins.boss.length===4){wBossDone=true;for(var i=0;i<4;i++)document.getElementById('wbd'+i).className='pdot ok';}}}
-  else{if(wPins.staff.length<4){wPins.staff+=d;rdotsW('wsd',wPins.staff);if(wPins.staff.length===4){wStaffDone=true;for(var i=0;i<4;i++)document.getElementById('wsd'+i).className='pdot ok';}}}
-}
-function wdel(who){
-  // Allow delete even after PIN is done - user can fix mistake
-  if(who==='admin'){wAdminDone=false;wPins.admin=wPins.admin.slice(0,-1);rdotsW('wad',wPins.admin);}
-  else if(who==='boss'){wBossDone=false;wPins.boss=wPins.boss.slice(0,-1);rdotsW('wbd',wPins.boss);}
-  else if(who==='staff'){wStaffDone=false;wPins.staff=wPins.staff.slice(0,-1);rdotsW('wsd',wPins.staff);}
-}
-function wclr(who){
-  if(who==='admin'){wAdminDone=false;wPins.admin='';rdotsW('wad','');}
-  else if(who==='boss'){wBossDone=false;wPins.boss='';rdotsW('wbd','');}
-  else if(who==='staff'){wStaffDone=false;wPins.staff='';rdotsW('wsd','');}
-}
-function wredo(who){
-  if(who==='admin'){wAdminDone=false;wPins.admin='';rdotsW('wad','');}
-  else if(who==='boss'){wBossDone=false;wPins.boss='';rdotsW('wbd','');}
-  else{wStaffDone=false;wPins.staff='';rdotsW('wsd','');}
-}
-function rdotsW(pfx,val){for(var i=0;i<4;i++) document.getElementById(pfx+i).className='pdot'+(i<val.length?' f':'');}
-
-// Keyboard support - numbers only, Backspace to delete
-document.addEventListener('keydown', function(e){
-  var k=e.key;
-  // Only allow 0-9 and Backspace, ignore everything else silently
-  var isNum=(k>='0'&&k<='9');
-  var isDel=(k==='Backspace');
-  if(!isNum&&!isDel) return;
-  // Login screen
-  if(document.getElementById('SCR-LOGIN').classList.contains('on')){
-    if(isNum) lpp(k);
-    else if(isDel) ldel();
-    return;
+// Keypad press — add digit to current PIN
+function wkp(who, d) {
+  if (who === 'admin') {
+    if (wPins.admin.length < 4) {
+      wPins.admin += d; rdotsW('wad', wPins.admin);
+      if (wPins.admin.length === 4) { wAdminDone = true; for (var i=0;i<4;i++) document.getElementById('wad'+i).className='pdot ok'; }
+    }
+  } else if (who === 'boss') {
+    if (wPins.boss.length < 4) {
+      wPins.boss += d; rdotsW('wbd', wPins.boss);
+      if (wPins.boss.length === 4) { wBossDone = true; for (var i=0;i<4;i++) document.getElementById('wbd'+i).className='pdot ok'; }
+    }
+  } else {
+    if (wPins.staff.length < 4) {
+      wPins.staff += d; rdotsW('wsd', wPins.staff);
+      if (wPins.staff.length === 4) { wStaffDone = true; for (var i=0;i<4;i++) document.getElementById('wsd'+i).className='pdot ok'; }
+    }
   }
-  // Wizard PIN steps
-  if(document.getElementById('SCR-SETUP').classList.contains('on')){
-    var who = wizStep===1?'admin':wizStep===2?'boss':wizStep===3?'staff':null;
-    if(!who) return;
-    if(isNum) wkp(who,k);
-    else if(isDel) wdel(who);
-  }
-});
+}
 
-// ══════════════════════════════════════
+// Delete last digit (works even after PIN is complete, so user can fix mistakes)
+function wdel(who) {
+  if (who === 'admin') { wAdminDone = false; wPins.admin = wPins.admin.slice(0,-1); rdotsW('wad', wPins.admin); }
+  else if (who === 'boss') { wBossDone = false; wPins.boss = wPins.boss.slice(0,-1); rdotsW('wbd', wPins.boss); }
+  else { wStaffDone = false; wPins.staff = wPins.staff.slice(0,-1); rdotsW('wsd', wPins.staff); }
+}
+
+// Clear all digits
+function wclr(who) {
+  if (who === 'admin') { wAdminDone = false; wPins.admin = ''; rdotsW('wad', ''); }
+  else if (who === 'boss') { wBossDone = false; wPins.boss = ''; rdotsW('wbd', ''); }
+  else { wStaffDone = false; wPins.staff = ''; rdotsW('wsd', ''); }
+}
+
+// Update PIN dot display (f = filled, ok = green)
+function rdotsW(pfx, val) {
+  for (var i = 0; i < 4; i++) {
+    document.getElementById(pfx + i).className = 'pdot' + (i < val.length ? ' f' : '');
+  }
+}
+
+// =============================================
 //  LOGIN
-// ══════════════════════════════════════
-var loginPin='';
-function lpp(d){if(loginPin.length>=4)return;loginPin+=d;renderLoginDots();if(loginPin.length===4)setTimeout(tryLogin,150);}
-function ldel(){loginPin=loginPin.slice(0,-1);renderLoginDots();}
-function lclr(){loginPin='';renderLoginDots();}
-function renderLoginDots(err){for(var i=0;i<4;i++){var d=document.getElementById('lp'+i);d.className='login-pdot'+(err?' err':i<loginPin.length?' f':'');}}
+// =============================================
+var loginPin = '';
 
-async function tryLogin(){
-  var role=null;
-  if(loginPin===CFG.adminPin) role='admin';
-  else if(loginPin===CFG.bossPin) role='boss';
-  else if(loginPin===CFG.staffPin) role='staff';
-  if(role){
-    loginPin='';renderLoginDots();
-    document.getElementById('login-err').textContent='';
-    if(role==='boss'&&!CFG.bossNameSet){showScreen('SCR-SETNAME');return;}
-    CU={role:role,name:role==='admin'?'Admin':role==='boss'?CFG.bossName:'Staff'};
+// Add digit to login PIN
+function lpp(d) {
+  if (loginPin.length >= 4) return;
+  loginPin += d;
+  renderLoginDots();
+  if (loginPin.length === 4) setTimeout(tryLogin, 150);
+}
+function ldel() { loginPin = loginPin.slice(0, -1); renderLoginDots(); }
+function lclr() { loginPin = ''; renderLoginDots(); }
+
+// Update the 4 login dots
+function renderLoginDots(err) {
+  for (var i = 0; i < 4; i++) {
+    var d = document.getElementById('lp' + i);
+    d.className = 'login-pdot' + (err ? ' err' : i < loginPin.length ? ' f' : '');
+  }
+}
+
+// Check PIN against admin/boss/staff
+async function tryLogin() {
+  var role = null;
+  if (loginPin === CFG.adminPin) role = 'admin';
+  else if (loginPin === CFG.bossPin) role = 'boss';
+  else if (loginPin === CFG.staffPin) role = 'staff';
+
+  if (role) {
+    loginPin = ''; renderLoginDots();
+    document.getElementById('login-err').textContent = '';
+    // Boss must set name on first login
+    if (role === 'boss' && !CFG.bossNameSet) { showScreen('SCR-SETNAME'); return; }
+    CU = { role: role, name: role === 'admin' ? 'Admin' : role === 'boss' ? CFG.bossName : 'Staff' };
     await loadAppData();
     startApp();
   } else {
+    // Wrong PIN — shake and show error
     renderLoginDots(true);
-    document.getElementById('login-err').textContent='Incorrect PIN. Please try again.';
-    loginPin='';
-    setTimeout(function(){renderLoginDots();document.getElementById('login-err').textContent='';},1200);
+    document.getElementById('login-err').textContent = 'Incorrect PIN. Please try again.';
+    loginPin = '';
+    setTimeout(function() { renderLoginDots(); document.getElementById('login-err').textContent = ''; }, 1200);
   }
 }
 
-// ══════════════════════════════════════
-//  BOSS SET NAME
-// ══════════════════════════════════════
-async function saveBossName(){
-  var n=document.getElementById('boss-name-inp').value.trim();
-  if(!n){toast('⚠️ Please enter your name','to');return;}
+// =============================================
+//  BOSS NAME SETUP (first login)
+// =============================================
+async function saveBossName() {
+  var n = document.getElementById('boss-name-inp').value.trim();
+  if (!n) { toast('⚠️ Please enter your name', 'to'); return; }
   showLoading('Saving...');
   try {
-    await sbFetch('users?restaurant_id=eq.'+RID+'&role=eq.boss',{method:'PATCH',body:{name:n}});
-    CFG.bossName=n;CFG.bossNameSet=true;
-    CU={role:'boss',name:n};
+    await sbFetch('users?restaurant_id=eq.' + RID + '&role=eq.boss', { method: 'PATCH', body: { name: n } });
+    CFG.bossName = n; CFG.bossNameSet = true;
+    CU = { role: 'boss', name: n };
     hideLoading();
     await loadAppData();
     startApp();
-  } catch(e){hideLoading();toast('❌ Error: '+e.message,'tr');}
+  } catch(e) { hideLoading(); toast('❌ Error: ' + e.message, 'tr'); }
 }
 
-// ══════════════════════════════════════
-//  LOAD DATA
-// ══════════════════════════════════════
-async function loadAppData(){
+// =============================================
+//  LOAD DATA FROM SUPABASE
+//  Called after login — loads products and history
+// =============================================
+async function loadAppData() {
   showLoading('Loading data...');
   try {
-    var p=await sbFetch('products?restaurant_id=eq.'+RID+'&order=name.asc&select=*');
-    var t=await sbFetch('transactions?restaurant_id=eq.'+RID+'&order=created_at.desc&limit=200&select=*');
-    products=Array.isArray(p)?p:[];
-    txLog   =Array.isArray(t)?t:[];
-  } catch(e){toast('⚠️ Could not load data','to');products=[];txLog=[];}
+    var p = await sbFetch('products?restaurant_id=eq.' + RID + '&order=name.asc&select=*');
+    var t = await sbFetch('transactions?restaurant_id=eq.' + RID + '&order=created_at.desc&limit=200&select=*');
+    products = Array.isArray(p) ? p : [];
+    txLog    = Array.isArray(t) ? t : [];
+  } catch(e) {
+    toast('⚠️ Could not load data', 'to');
+    products = []; txLog = [];
+  }
   hideLoading();
 }
 
-// ══════════════════════════════════════
-//  APP START
-// ══════════════════════════════════════
-function startApp(){
+// =============================================
+//  START APP
+//  Sets up the main app UI after successful login
+// =============================================
+function startApp() {
   showScreen('SCR-LOGIN');
-  document.getElementById('APP').style.display='flex';
+  document.getElementById('APP').style.display = 'flex';
   document.getElementById('SCR-LOGIN').classList.remove('on');
-  document.getElementById('app-rname').textContent=CFG.restaurantName;
-  var av=document.getElementById('UAV');
-  av.className='uav av-'+CU.role;
-  av.textContent=CU.role==='admin'?'🔴':CU.role==='boss'?'🟣':'🟢';
-  document.getElementById('UNAME').textContent=CU.name;
-  var rb=document.getElementById('URBDG');
-  rb.className='rbdg rb-'+CU.role;
-  rb.textContent=CU.role==='admin'?'Admin':CU.role==='boss'?'Boss':'Staff';
-  var navDef=[
-    {id:'dashboard',l:'📊 Dashboard'},{id:'scan',l:'📷 Scan'},{id:'products',l:'📦 Products'},{id:'history',l:'📋 History'},
-    {id:'settings',l:'⚙️ Settings',roles:['admin','boss']},{id:'admin',l:'🔴 Admin',roles:['admin']},
+  document.getElementById('app-rname').textContent = CFG.restaurantName;
+
+  // Set user avatar and role badge
+  var av = document.getElementById('UAV');
+  av.className = 'uav av-' + CU.role;
+  av.textContent = CU.role === 'admin' ? '🔴' : CU.role === 'boss' ? '🟣' : '🟢';
+  document.getElementById('UNAME').textContent = CU.name;
+  var rb = document.getElementById('URBDG');
+  rb.className = 'rbdg rb-' + CU.role;
+  rb.textContent = CU.role === 'admin' ? 'Admin' : CU.role === 'boss' ? 'Boss' : 'Staff';
+
+  // Build navigation tabs (hide admin/settings from staff)
+  var navDef = [
+    { id: 'dashboard', l: '📊 Dashboard' },
+    { id: 'scan',      l: '📷 Scan' },
+    { id: 'products',  l: '📦 Products' },
+    { id: 'history',   l: '📋 History' },
+    { id: 'settings',  l: '⚙️ Settings', roles: ['admin','boss'] },
+    { id: 'admin',     l: '🔴 Admin',    roles: ['admin'] },
   ];
-  var html='';
-  navDef.forEach(function(n){if(!n.roles||n.roles.indexOf(CU.role)!==-1)html+='<button class="tnav" id="nv-'+n.id+'" onclick="showPage(\''+n.id+'\')">'+n.l+'</button>';});
-  document.getElementById('TNAV').innerHTML=html;
-  document.getElementById('ADD-PROD-BTN').innerHTML='<button class="btn bb" onclick="openAddProd()">➕ Add Product</button>';
-  document.getElementById('CLR-HIST-BTN').style.display=CU.role==='admin'?'inline-flex':'none';
-  if(CU.role==='staff') document.getElementById('hist-sub').textContent='Your own scan activity';
+  var html = '';
+  navDef.forEach(function(n) {
+    if (!n.roles || n.roles.indexOf(CU.role) !== -1)
+      html += '<button class="tnav" id="nv-' + n.id + '" onclick="showPage(\'' + n.id + '\')">' + n.l + '</button>';
+  });
+  document.getElementById('TNAV').innerHTML = html;
+
+  // Add product button only for admin/boss
+  document.getElementById('ADD-PROD-BTN').innerHTML = (CU.role !== 'staff')
+    ? '<button class="btn bb" onclick="openAddProd()">➕ Add Product</button>' : '';
+
+  // Clear history button only for admin
+  document.getElementById('CLR-HIST-BTN').style.display = CU.role === 'admin' ? 'inline-flex' : 'none';
+  if (CU.role === 'staff') document.getElementById('hist-sub').textContent = 'Your own scan activity';
+
   showPage('dashboard');
 }
 
-function doLogout(){
-  CU=null;loginPin='';renderLoginDots();
-  document.getElementById('APP').style.display='none';
-  document.getElementById('login-err').textContent='';
-  curProd=null;document.getElementById('RES-BOX').classList.remove('on');
-  products=[];txLog=[];
+// Logout — clear user and go back to login
+function doLogout() {
+  CU = null; loginPin = ''; renderLoginDots();
+  document.getElementById('APP').style.display = 'none';
+  document.getElementById('login-err').textContent = '';
+  curProd = null;
+  document.getElementById('RES-BOX').classList.remove('on');
+  products = []; txLog = [];
   showScreen('SCR-LOGIN');
 }
 
-// ══════════════════════════════════════
-//  PAGE NAV
-// ══════════════════════════════════════
-function showPage(p){
-  document.querySelectorAll('.page').forEach(function(el){el.classList.remove('on');});
-  document.querySelectorAll('.tnav').forEach(function(el){el.classList.remove('on');});
-  var pg=document.getElementById('pg-'+p);if(!pg)return;
+// =============================================
+//  PAGE NAVIGATION
+// =============================================
+function showPage(p) {
+  document.querySelectorAll('.page').forEach(function(el) { el.classList.remove('on'); });
+  document.querySelectorAll('.tnav').forEach(function(el) { el.classList.remove('on'); });
+  var pg = document.getElementById('pg-' + p); if (!pg) return;
   pg.classList.add('on');
-  var nb=document.getElementById('nv-'+p);if(nb)nb.classList.add('on');
-  if(p==='dashboard')rdash();
-  if(p==='products') renderProds();
-  if(p==='history')  renderHist();
-  if(p==='settings') renderSettings();
-  if(p==='admin')    renderAdmin();
-  if(p==='scan')     setTimeout(function(){document.getElementById('SCAN-INP').focus();},100);
+  var nb = document.getElementById('nv-' + p); if (nb) nb.classList.add('on');
+  if (p === 'dashboard') rdash();
+  if (p === 'products')  renderProds();
+  if (p === 'history')   renderHist();
+  if (p === 'settings')  renderSettings();
+  if (p === 'admin')     renderAdmin();
+  if (p === 'scan')      setTimeout(function() { document.getElementById('SCAN-INP').focus(); }, 100);
 }
 
-// ══════════════════════════════════════
+// =============================================
 //  DASHBOARD
-// ══════════════════════════════════════
-function gst(p){if(p.stock===0)return{c:'sout',b:'sb-out',d:'🔴',l:'Out of Stock'};if(p.stock<p.min_stock)return{c:'slow',b:'sb-low',d:'🟡',l:'Low Stock'};return{c:'sok',b:'sb-ok',d:'🟢',l:'In Stock'};}
-function rdash(){
-  var low=products.filter(function(p){return p.stock>0&&p.stock<p.min_stock;});
-  var out=products.filter(function(p){return p.stock===0;});
-  var ok=products.filter(function(p){return p.stock>=p.min_stock;});
-  document.getElementById('SGRID').innerHTML=mkStat('Total Products',products.length,'var(--blue)','Registered items')+mkStat('In Stock',ok.length,'var(--green)','Above minimum')+mkStat('Low Stock',low.length,'var(--orange)','Below minimum')+mkStat('Out of Stock',out.length,'var(--red)','Need restocking');
-  var attn=low.concat(out),al=document.getElementById('ALERT');
-  if(attn.length>0){al.classList.remove('hidden');document.getElementById('ALERT-TEXT').innerHTML='<strong>'+attn.length+' item(s) need attention:</strong> '+attn.map(function(p){return p.name;}).join(', ');}
-  else al.classList.add('hidden');
-  var canMin=CU.role!=='staff';
-  var rows=attn.map(function(p){var s=gst(p);return '<tr><td><div class="pname">'+p.icon+' '+p.name+'</div><div class="psup">'+p.category+'</div></td><td><code style="font-size:11px;color:var(--muted);">'+p.barcode+'</code></td><td><span class="utag">'+p.unit+'</span></td><td><span class="sn '+s.c+'">'+p.stock+'</span></td><td style="font-family:monospace;font-size:12px;color:var(--muted);">≥ '+p.min_stock+'</td><td><span class="sbdg '+s.b+'">'+s.d+' '+s.l+'</span></td><td>'+(canMin?'<button class="btn bsm bo" onclick="openMinModal(\''+p.id+'\')">⚠️ Set Min</button>':'–')+'</td></tr>';}).join('');
-  document.getElementById('LOW-TBL').innerHTML=rows||'<tr><td colspan="7"><div class="es"><div class="ei">✅</div>All items above minimum stock.</div></td></tr>';
-}
-function mkStat(l,v,c,s){return '<div class="scard"><div class="slbl">'+l+'</div><div class="sval" style="color:'+c+';">'+v+'</div><div class="ssub">'+s+'</div></div>';}
+// =============================================
+function rdash() {
+  var total = products.length;
+  var low   = products.filter(function(p) { return p.stock > 0 && p.stock < p.min_stock; }).length;
+  var out   = products.filter(function(p) { return p.stock === 0; }).length;
+  var ok    = total - low - out;
 
-// ══════════════════════════════════════
-//  SCAN
-// ══════════════════════════════════════
-function doScan(){
-  var code=document.getElementById('SCAN-INP').value.trim();if(!code)return;
-  document.getElementById('SCAN-AREA').classList.add('on');
-  var prod=products.find(function(p){return p.barcode===code;});
-  document.getElementById('SCAN-INP').value='';
-  if(!prod){toast('❌ Barcode not found: '+code,'tr');document.getElementById('SCAN-AREA').classList.remove('on');return;}
-  curProd=prod;
-  document.getElementById('R-ICO').textContent=prod.icon;
-  document.getElementById('R-NAME').textContent=prod.name;
-  document.getElementById('R-META').textContent='Barcode: '+prod.barcode+' | Supplier: '+(prod.supplier||'–');
-  updRS();selUnit=prod.unit;
-  var units=['PKT','CTN','BOX','KG','PCS','BTL','BAG','TIN'];
-  document.getElementById('USEL').innerHTML=units.map(function(u){return '<button class="ubtn'+(u===prod.unit?' on':'')+'" onclick="setU(\''+u+'\',this)">'+u+'</button>';}).join('');
+  // Stat cards
+  document.getElementById('SGRID').innerHTML =
+    scard('Total Products', total, 'var(--text)') +
+    scard('In Stock', ok, 'var(--green)') +
+    scard('Low Stock', low, 'var(--orange)') +
+    scard('Out of Stock', out, 'var(--red)');
+
+  // Alert banner
+  var alert = document.getElementById('ALERT');
+  if (low + out > 0) {
+    alert.classList.remove('hidden');
+    document.getElementById('ALERT-TEXT').textContent = (low + out) + ' item(s) need restocking!';
+  } else {
+    alert.classList.add('hidden');
+  }
+
+  // Low stock table
+  var items = products.filter(function(p) { return p.stock < p.min_stock; });
+  var rows = items.map(function(p) {
+    var cls = p.stock === 0 ? 'sout' : 'slow';
+    var badge = p.stock === 0 ? '<span class="sbdg sb-out">Out of Stock</span>' : '<span class="sbdg sb-low">Low Stock</span>';
+    return '<tr><td><div class="pname">' + p.icon + ' ' + p.name + '</div><div class="psup">' + p.category + '</div></td>' +
+      '<td><code style="font-size:11px;color:var(--dim);">' + p.barcode + '</code></td>' +
+      '<td><span class="utag">' + p.unit + '</span></td>' +
+      '<td><span class="sn ' + cls + '">' + p.stock + '</span></td>' +
+      '<td style="color:var(--muted);">' + p.min_stock + '</td>' +
+      '<td>' + badge + '</td>' +
+      '<td><button class="btn bo bsm" onclick="openMinModal(\'' + p.id + '\')">⚠️ Set Min</button></td></tr>';
+  }).join('');
+  document.getElementById('LOW-TBL').innerHTML = rows || '<tr><td colspan="7"><div class="es"><div class="ei">✅</div>All items are well stocked!</div></td></tr>';
+}
+
+// Helper to build a stat card
+function scard(label, val, color) {
+  return '<div class="scard"><div class="sc-label">' + label + '</div><div class="sc-val" style="color:' + color + ';">' + val + '</div></div>';
+}
+
+// =============================================
+//  SCAN PAGE
+// =============================================
+function doScan() {
+  var bc = document.getElementById('SCAN-INP').value.trim();
+  if (!bc) return;
+  var p = products.find(function(x) { return x.barcode === bc; });
+  if (!p) { toast('❌ Barcode not found: ' + bc, 'tr'); return; }
+  curProd = p;
+  document.getElementById('R-ICO').textContent = p.icon;
+  document.getElementById('R-NAME').textContent = p.name;
+  document.getElementById('R-META').textContent = p.barcode + ' · ' + p.category + ' · ' + p.supplier;
+  document.getElementById('R-SV').textContent = p.stock;
+  document.getElementById('R-SV').className = 'rsv ' + (p.stock === 0 ? 'sout' : p.stock < p.min_stock ? 'slow' : 'sok');
+  // Unit selector
+  document.getElementById('USEL').innerHTML = '<span class="ubtn on">' + p.unit + '</span>';
+  selUnit = p.unit;
+  document.getElementById('QTY').value = 1;
   document.getElementById('RES-BOX').classList.add('on');
+  document.getElementById('SCAN-INP').value = '';
 }
-function updRS(){if(!curProd)return;var e=document.getElementById('R-SV');e.textContent=curProd.stock;e.style.color=curProd.stock===0?'var(--red)':curProd.stock<curProd.min_stock?'var(--orange)':'var(--green)';}
-function setU(u,el){selUnit=u;document.querySelectorAll('#USEL .ubtn').forEach(function(b){b.classList.remove('on');});el.classList.add('on');}
 
-async function stockAct(t){
-  if(!curProd)return;
-  var qty=parseInt(document.getElementById('QTY').value)||1;
-  if(t==='OUT'&&curProd.stock<qty){toast('⚠️ Not enough stock! Available: '+curProd.stock,'to');return;}
-  var before=curProd.stock,after=t==='IN'?before+qty:Math.max(0,before-qty);
-  showLoading('Saving...');
+function clearScan() {
+  curProd = null;
+  document.getElementById('RES-BOX').classList.remove('on');
+  document.getElementById('SCAN-INP').value = '';
+  document.getElementById('SCAN-INP').focus();
+}
+
+// Stock IN or OUT action
+async function stockAct(type) {
+  if (!curProd) return;
+  var qty = parseInt(document.getElementById('QTY').value) || 1;
+  if (qty <= 0) { toast('⚠️ Quantity must be at least 1', 'to'); return; }
+  if (type === 'OUT' && qty > curProd.stock) { toast('❌ Not enough stock! Current: ' + curProd.stock, 'tr'); return; }
+
+  var before = curProd.stock;
+  var after  = type === 'IN' ? before + qty : before - qty;
+
+  showLoading('Updating stock...');
   try {
-    await sbFetch('products?id=eq.'+curProd.id,{method:'PATCH',body:{stock:after}});
-    await sbFetch('transactions',{method:'POST',body:{restaurant_id:RID,product_id:curProd.id,product_name:curProd.name,barcode:curProd.barcode,type:t,quantity:qty,unit:selUnit,stock_before:before,stock_after:after,by_user:CU.name}});
-    curProd.stock=after;
-    var idx=products.findIndex(function(p){return p.id===curProd.id;});
-    if(idx>=0)products[idx].stock=after;
-    var now=new Date();
-    txLog.unshift({id:Date.now(),created_at:now.toISOString(),product_name:curProd.name,barcode:curProd.barcode,type:t,quantity:qty,unit:selUnit,stock_before:before,stock_after:after,by_user:CU.name});
+    // Update product stock in Supabase
+    await sbFetch('products?id=eq.' + curProd.id, { method: 'PATCH', body: { stock: after } });
+    // Save transaction record
+    await sbFetch('transactions', { method: 'POST', body: {
+      restaurant_id: RID,
+      product_id: curProd.id,
+      product_name: curProd.name,
+      barcode: curProd.barcode,
+      type: type,
+      quantity: qty,
+      unit: selUnit,
+      stock_before: before,
+      stock_after: after,
+      by_user: CU.name
+    }});
+    // Update local data
+    curProd.stock = after;
+    products.find(function(p) { return p.id === curProd.id; }).stock = after;
+    txLog.unshift({ restaurant_id: RID, product_id: curProd.id, product_name: curProd.name, barcode: curProd.barcode, type: type, quantity: qty, unit: selUnit, stock_before: before, stock_after: after, by_user: CU.name, created_at: new Date().toISOString() });
+    // Update display
+    document.getElementById('R-SV').textContent = after;
+    document.getElementById('R-SV').className = 'rsv ' + (after === 0 ? 'sout' : after < curProd.min_stock ? 'slow' : 'sok');
     hideLoading();
-    toast((t==='IN'?'➕ Stock IN':'➖ Stock OUT')+' — '+curProd.name+' '+qty+' '+selUnit,t==='IN'?'tg':'tr');
-    updRS();renderRecent();clearScan();
-  } catch(e){hideLoading();toast('❌ Error: '+e.message,'tr');}
+    toast((type === 'IN' ? '➕ Stock IN' : '➖ Stock OUT') + ': ' + qty + ' ' + selUnit, type === 'IN' ? 'tg' : 'tr');
+    renderRecent();
+  } catch(e) { hideLoading(); toast('❌ Error: ' + e.message, 'tr'); }
 }
-function clearScan(){document.getElementById('RES-BOX').classList.remove('on');document.getElementById('SCAN-AREA').classList.remove('on');curProd=null;setTimeout(function(){document.getElementById('SCAN-INP').focus();},100);}
 
-function renderRecent(){
-  var rows=txLog.slice(0,8).map(function(h){
-    var t=h.type==='IN',dt=new Date(h.created_at);
-    return '<tr class="li-'+(t?'in':'out')+'"><td>'+dt.toLocaleTimeString()+'</td><td>'+h.product_name+'</td><td><code style="font-size:11px;color:var(--muted);">'+h.barcode+'</code></td><td><span class="ltype '+(t?'lt-in':'lt-out')+'">'+(t?'➕ IN':'➖ OUT')+'</span></td><td style="font-family:monospace;font-weight:700;color:'+(t?'var(--green)':'var(--red)')+';">'+(t?'+':'-')+h.quantity+'</td><td><span class="utag">'+h.unit+'</span></td><td style="font-family:monospace;font-weight:700;">'+h.stock_after+'</td><td style="font-size:12px;color:var(--muted);">'+h.by_user+'</td></tr>';
+// Show recent transactions at bottom of scan page
+function renderRecent() {
+  var rows = txLog.slice(0, 10).map(function(h) {
+    var t = h.type === 'IN';
+    var dt = new Date(h.created_at);
+    return '<tr class="li-' + (t ? 'in' : 'out') + '">' +
+      '<td style="font-size:12px;">' + dt.toLocaleTimeString() + '</td>' +
+      '<td class="pname">' + h.product_name + '</td>' +
+      '<td><code style="font-size:11px;color:var(--dim);">' + h.barcode + '</code></td>' +
+      '<td><span class="ltype ' + (t ? 'lt-in' : 'lt-out') + '">' + (t ? '➕ IN' : '➖ OUT') + '</span></td>' +
+      '<td style="font-family:monospace;font-weight:700;color:' + (t ? 'var(--green)' : 'var(--red)') + ';">' + (t ? '+' : '-') + h.quantity + '</td>' +
+      '<td><span class="utag">' + h.unit + '</span></td>' +
+      '<td style="font-family:monospace;font-weight:700;">' + h.stock_after + '</td>' +
+      '<td style="font-size:12px;color:var(--dim);">' + h.by_user + '</td></tr>';
   }).join('');
-  document.getElementById('RECENT-TBL').innerHTML=rows||'<tr><td colspan="8"><div class="es"><div class="ei">📷</div>No scans yet.</div></td></tr>';
+  document.getElementById('RECENT-TBL').innerHTML = rows || '<tr><td colspan="8"><div class="es"><div class="ei">📷</div>No recent scans.</div></td></tr>';
 }
 
-// ══════════════════════════════════════
-//  PRODUCTS
-// ══════════════════════════════════════
-function renderProds(){
-  var q=(document.getElementById('PROD-SRCH').value||'').toLowerCase();
-  var list=products.filter(function(p){return p.name.toLowerCase().includes(q)||p.barcode.toLowerCase().includes(q)||(p.supplier||'').toLowerCase().includes(q);});
-  var canMin=CU.role!=='staff',canDel=CU.role==='admin';
-  var rows=list.map(function(p){
-    var s=gst(p),ac='<div style="display:flex;gap:5px;">';
-    ac+='<button class="btn bsm bou" onclick="openEditProd(\''+p.id+'\')">✏️ Edit</button>';
-    if(canMin)ac+='<button class="btn bsm bo" onclick="openMinModal(\''+p.id+'\')">⚠️</button>';
-    if(canDel)ac+='<button class="btn bsm bda" onclick="openDelModal(\''+p.id+'\')">🗑</button>';
-    ac+='</div>';
-    return '<tr><td><div class="pname">'+p.icon+' '+p.name+'</div><div class="psup">'+p.category+'</div></td><td><code style="font-family:monospace;font-size:12px;color:var(--muted);">'+p.barcode+'</code></td><td style="font-size:13px;color:var(--dim);">'+(p.supplier||'–')+'</td><td><span class="utag">'+p.unit+'</span></td><td><span class="sn '+s.c+'">'+p.stock+'</span></td><td style="font-family:monospace;font-size:12px;color:var(--muted);">≥ '+p.min_stock+'</td><td><span class="sbdg '+s.b+'">'+s.d+' '+s.l+'</span></td><td>'+ac+'</td></tr>';
+// =============================================
+//  PRODUCTS PAGE
+// =============================================
+function renderProds() {
+  var q = (document.getElementById('PROD-SRCH').value || '').toLowerCase();
+  var list = products.filter(function(p) {
+    return !q || p.name.toLowerCase().includes(q) || p.barcode.toLowerCase().includes(q) || p.supplier.toLowerCase().includes(q);
+  });
+  var rows = list.map(function(p) {
+    var cls = p.stock === 0 ? 'sout' : p.stock < p.min_stock ? 'slow' : 'sok';
+    var badge = p.stock === 0 ? '<span class="sbdg sb-out">Out</span>' : p.stock < p.min_stock ? '<span class="sbdg sb-low">Low</span>' : '<span class="sbdg sb-ok">OK</span>';
+    var actions = CU.role !== 'staff'
+      ? '<button class="btn bou bsm" onclick="openEditProd(\'' + p.id + '\')">✏️ Edit</button> <button class="btn bo bsm" onclick="openMinModal(\'' + p.id + '\')">⚠️</button> <button class="btn bda bsm" onclick="openDelModal(\'' + p.id + '\')">🗑</button>'
+      : '–';
+    return '<tr>' +
+      '<td><div class="pname">' + p.icon + ' ' + p.name + '</div><div class="psup">' + p.category + '</div></td>' +
+      '<td><code style="font-size:11px;">' + p.barcode + '</code></td>' +
+      '<td style="color:var(--dim);font-size:12px;">' + p.supplier + '</td>' +
+      '<td><span class="utag">' + p.unit + '</span></td>' +
+      '<td><span class="sn ' + cls + '">' + p.stock + '</span></td>' +
+      '<td style="color:var(--muted);">' + p.min_stock + '</td>' +
+      '<td>' + badge + '</td>' +
+      '<td>' + actions + '</td></tr>';
   }).join('');
-  document.getElementById('PROD-TBL').innerHTML=rows||'<tr><td colspan="8"><div class="es"><div class="ei">📦</div>No products found.</div></td></tr>';
+  document.getElementById('PROD-TBL').innerHTML = rows || '<tr><td colspan="8"><div class="es"><div class="ei">📦</div>No products yet.</div></td></tr>';
 }
-function openAddProd(){document.getElementById('PROD-MODAL-TITLE').textContent='Add New Product';document.getElementById('EDIT-ID').value='';document.getElementById('F-NAME').value='';document.getElementById('F-BC').value='';document.getElementById('F-UNIT').value='PKT';document.getElementById('F-SUP').value='';document.getElementById('F-STOCK').value='0';document.getElementById('F-MIN').value='10';document.getElementById('F-CAT').value='Others';document.getElementById('PROD-MODAL').classList.add('open');}
-function openEditProd(id){var p=products.find(function(x){return x.id===id;});if(!p)return;document.getElementById('PROD-MODAL-TITLE').textContent='Edit Product';document.getElementById('EDIT-ID').value=id;document.getElementById('F-NAME').value=p.name;document.getElementById('F-BC').value=p.barcode;document.getElementById('F-UNIT').value=p.unit;document.getElementById('F-SUP').value=p.supplier||'';document.getElementById('F-STOCK').value=p.stock;document.getElementById('F-MIN').value=p.min_stock;document.getElementById('F-CAT').value=p.category;document.getElementById('PROD-MODAL').classList.add('open');}
-function closeProdModal(){document.getElementById('PROD-MODAL').classList.remove('open');}
 
-async function saveProd(){
-  var name=document.getElementById('F-NAME').value.trim(),bc=document.getElementById('F-BC').value.trim();
-  var unit=document.getElementById('F-UNIT').value,sup=document.getElementById('F-SUP').value.trim()||'–';
-  var stock=parseInt(document.getElementById('F-STOCK').value)||0,min=parseInt(document.getElementById('F-MIN').value)||0;
-  var cat=document.getElementById('F-CAT').value,eid=document.getElementById('EDIT-ID').value;
-  if(!name){toast('⚠️ Product name required','to');return;}
-  if(!bc){toast('⚠️ Barcode required','to');return;}
-  var dup=products.find(function(p){return p.barcode===bc&&p.id!==eid;});
-  if(dup){toast('❌ Barcode already exists','tr');return;}
-  var ic={Beverages:'🍫','Dry Goods':'🍚',Condiments:'🧂',Dairy:'🥛',Frozen:'🧊',Fresh:'🥬',Packaging:'📦',Cleaning:'🧹',Others:'📦'};
-  var icon=ic[cat]||'📦';
-  var body={name:name,barcode:bc,unit:unit,supplier:sup,stock:stock,min_stock:min,category:cat,icon:icon};
+function openAddProd() {
+  document.getElementById('PROD-MODAL-TITLE').textContent = 'Add Product';
+  document.getElementById('EDIT-ID').value = '';
+  document.getElementById('F-NAME').value = '';
+  document.getElementById('F-BC').value = '';
+  document.getElementById('F-UNIT').value = 'PKT';
+  document.getElementById('F-SUP').value = '';
+  document.getElementById('F-STOCK').value = '';
+  document.getElementById('F-MIN').value = '';
+  document.getElementById('F-CAT').value = 'Others';
+  document.getElementById('PROD-MODAL').classList.add('open');
+}
+
+function openEditProd(id) {
+  var p = products.find(function(x) { return x.id === id; }); if (!p) return;
+  document.getElementById('PROD-MODAL-TITLE').textContent = 'Edit Product';
+  document.getElementById('EDIT-ID').value = p.id;
+  document.getElementById('F-NAME').value = p.name;
+  document.getElementById('F-BC').value = p.barcode;
+  document.getElementById('F-UNIT').value = p.unit;
+  document.getElementById('F-SUP').value = p.supplier;
+  document.getElementById('F-STOCK').value = p.stock;
+  document.getElementById('F-MIN').value = p.min_stock;
+  document.getElementById('F-CAT').value = p.category;
+  document.getElementById('PROD-MODAL').classList.add('open');
+}
+
+function closeProdModal() { document.getElementById('PROD-MODAL').classList.remove('open'); }
+
+async function saveProd() {
+  var name  = document.getElementById('F-NAME').value.trim();
+  var bc    = document.getElementById('F-BC').value.trim();
+  var unit  = document.getElementById('F-UNIT').value;
+  var sup   = document.getElementById('F-SUP').value.trim() || '–';
+  var stock = parseInt(document.getElementById('F-STOCK').value) || 0;
+  var min   = parseInt(document.getElementById('F-MIN').value) || 0;
+  var cat   = document.getElementById('F-CAT').value;
+  var eid   = document.getElementById('EDIT-ID').value;
+  if (!name) { toast('⚠️ Product name required', 'to'); return; }
+  if (!bc)   { toast('⚠️ Barcode required', 'to'); return; }
+  // Check duplicate barcode
+  var dup = products.find(function(p) { return p.barcode === bc && p.id !== eid; });
+  if (dup) { toast('❌ Barcode already exists', 'tr'); return; }
+  // Auto icon based on category
+  var icons = { Beverages:'🍫','Dry Goods':'🍚',Condiments:'🧂',Dairy:'🥛',Frozen:'🧊',Fresh:'🥬',Packaging:'📦',Cleaning:'🧹',Others:'📦' };
+  var body = { name: name, barcode: bc, unit: unit, supplier: sup, stock: stock, min_stock: min, category: cat, icon: icons[cat] || '📦' };
   showLoading('Saving...');
   try {
-    if(eid){
-      await sbFetch('products?id=eq.'+eid,{method:'PATCH',body:body});
-      var idx=products.findIndex(function(x){return x.id===eid;});
-      if(idx>=0)Object.assign(products[idx],body);
-      toast('✅ Product updated','tg');
+    if (eid) {
+      // Update existing product
+      await sbFetch('products?id=eq.' + eid, { method: 'PATCH', body: body });
+      var idx = products.findIndex(function(x) { return x.id === eid; });
+      if (idx >= 0) Object.assign(products[idx], body);
+      toast('✅ Product updated', 'tg');
     } else {
-      body.restaurant_id=RID;
-      var rows=await sbFetch('products',{method:'POST',body:body});
+      // Add new product
+      body.restaurant_id = RID;
+      var rows = await sbFetch('products', { method: 'POST', body: body });
       products.push(rows[0]);
-      toast('✅ Product added: '+name,'tg');
+      toast('✅ Product added: ' + name, 'tg');
     }
-    hideLoading();closeProdModal();renderProds();
-  } catch(e){hideLoading();toast('❌ Error: '+e.message,'tr');}
+    hideLoading(); closeProdModal(); renderProds();
+  } catch(e) { hideLoading(); toast('❌ Error: ' + e.message, 'tr'); }
 }
 
-function openMinModal(id){var p=products.find(function(x){return x.id===id;});if(!p)return;editMinId=id;document.getElementById('MIN-PNAME').textContent=p.icon+' '+p.name;document.getElementById('MIN-PINFO').textContent='Barcode: '+p.barcode+' | Current: '+p.stock+' '+p.unit;document.getElementById('MIN-VAL').value=p.min_stock;document.getElementById('MIN-MODAL').classList.add('open');}
-function closeMinModal(){document.getElementById('MIN-MODAL').classList.remove('open');editMinId=null;}
-async function saveMin(){
-  var v=parseInt(document.getElementById('MIN-VAL').value)||0,p=products.find(function(x){return x.id===editMinId;});
-  if(!p)return;
+// Min stock modal
+function openMinModal(id) {
+  var p = products.find(function(x) { return x.id === id; }); if (!p) return;
+  editMinId = id;
+  document.getElementById('MIN-PNAME').textContent = p.icon + ' ' + p.name;
+  document.getElementById('MIN-PINFO').textContent = 'Barcode: ' + p.barcode + ' | Current: ' + p.stock + ' ' + p.unit;
+  document.getElementById('MIN-VAL').value = p.min_stock;
+  document.getElementById('MIN-MODAL').classList.add('open');
+}
+function closeMinModal() { document.getElementById('MIN-MODAL').classList.remove('open'); editMinId = null; }
+async function saveMin() {
+  var v = parseInt(document.getElementById('MIN-VAL').value) || 0;
+  var p = products.find(function(x) { return x.id === editMinId; }); if (!p) return;
   showLoading('Saving...');
-  try{await sbFetch('products?id=eq.'+editMinId,{method:'PATCH',body:{min_stock:v}});p.min_stock=v;hideLoading();toast('⚠️ Min stock set to '+v,'to');closeMinModal();renderProds();rdash();}
-  catch(e){hideLoading();toast('❌ Error: '+e.message,'tr');}
+  try {
+    await sbFetch('products?id=eq.' + editMinId, { method: 'PATCH', body: { min_stock: v } });
+    p.min_stock = v;
+    hideLoading(); toast('⚠️ Min stock set to ' + v, 'to'); closeMinModal(); renderProds(); rdash();
+  } catch(e) { hideLoading(); toast('❌ Error: ' + e.message, 'tr'); }
 }
 
-function openDelModal(id){var p=products.find(function(x){return x.id===id;});if(!p)return;deletingId=id;document.getElementById('DEL-NAME').textContent=p.name;document.getElementById('DEL-MODAL').classList.add('open');}
-function closeDelModal(){document.getElementById('DEL-MODAL').classList.remove('open');deletingId=null;}
-async function confDel(){
+// Delete product modal
+function openDelModal(id) {
+  var p = products.find(function(x) { return x.id === id; }); if (!p) return;
+  deletingId = id;
+  document.getElementById('DEL-NAME').textContent = p.name;
+  document.getElementById('DEL-MODAL').classList.add('open');
+}
+function closeDelModal() { document.getElementById('DEL-MODAL').classList.remove('open'); deletingId = null; }
+async function confDel() {
   showLoading('Deleting...');
-  try{await sbFetch('products?id=eq.'+deletingId,{method:'DELETE',prefer:'return=minimal'});products=products.filter(function(p){return p.id!==deletingId;});hideLoading();toast('🗑 Product deleted','tr');closeDelModal();renderProds();}
-  catch(e){hideLoading();toast('❌ Error: '+e.message,'tr');}
+  try {
+    await sbFetch('products?id=eq.' + deletingId, { method: 'DELETE', prefer: 'return=minimal' });
+    products = products.filter(function(p) { return p.id !== deletingId; });
+    hideLoading(); toast('🗑 Product deleted', 'tr'); closeDelModal(); renderProds();
+  } catch(e) { hideLoading(); toast('❌ Error: ' + e.message, 'tr'); }
 }
 
-// ══════════════════════════════════════
-//  HISTORY
-// ══════════════════════════════════════
-function renderHist(){
-  var list=hfilt==='all'?txLog:txLog.filter(function(h){return h.type===hfilt;});
-  if(CU.role==='staff')list=list.filter(function(h){return h.by_user===CU.name;});
-  var rows=list.map(function(h){
-    var t=h.type==='IN',dt=new Date(h.created_at);
-    return '<tr class="li-'+(t?'in':'out')+'"><td style="font-size:12px;"><div>'+dt.toLocaleTimeString()+'</div><div style="color:var(--muted);">'+dt.toLocaleDateString()+'</div></td><td class="pname">'+h.product_name+'</td><td><code style="font-size:11px;color:var(--muted);">'+h.barcode+'</code></td><td><span class="ltype '+(t?'lt-in':'lt-out')+'">'+(t?'➕ IN':'➖ OUT')+'</span></td><td style="font-family:monospace;font-weight:700;color:'+(t?'var(--green)':'var(--red)')+';">'+(t?'+':'-')+h.quantity+'</td><td><span class="utag">'+h.unit+'</span></td><td style="font-family:monospace;">'+h.stock_before+'</td><td style="font-family:monospace;font-weight:700;">'+h.stock_after+'</td><td style="font-size:12px;color:var(--muted);">'+h.by_user+'</td></tr>';
+// =============================================
+//  HISTORY PAGE
+// =============================================
+function renderHist() {
+  var list = hfilt === 'all' ? txLog : txLog.filter(function(h) { return h.type === hfilt; });
+  // Staff only sees their own transactions
+  if (CU.role === 'staff') list = list.filter(function(h) { return h.by_user === CU.name; });
+  var rows = list.map(function(h) {
+    var t = h.type === 'IN';
+    var dt = new Date(h.created_at);
+    return '<tr class="li-' + (t ? 'in' : 'out') + '">' +
+      '<td style="font-size:12px;"><div>' + dt.toLocaleTimeString() + '</div><div style="color:var(--muted);">' + dt.toLocaleDateString() + '</div></td>' +
+      '<td class="pname">' + h.product_name + '</td>' +
+      '<td><code style="font-size:11px;color:var(--muted);">' + h.barcode + '</code></td>' +
+      '<td><span class="ltype ' + (t ? 'lt-in' : 'lt-out') + '">' + (t ? '➕ IN' : '➖ OUT') + '</span></td>' +
+      '<td style="font-family:monospace;font-weight:700;color:' + (t ? 'var(--green)' : 'var(--red)') + ';">' + (t ? '+' : '-') + h.quantity + '</td>' +
+      '<td><span class="utag">' + h.unit + '</span></td>' +
+      '<td style="font-family:monospace;">' + h.stock_before + '</td>' +
+      '<td style="font-family:monospace;font-weight:700;">' + h.stock_after + '</td>' +
+      '<td style="font-size:12px;color:var(--muted);">' + h.by_user + '</td></tr>';
   }).join('');
-  document.getElementById('HIST-TBL').innerHTML=rows||'<tr><td colspan="9"><div class="es"><div class="ei">📋</div>No history yet.</div></td></tr>';
-}
-function fhist(f,btn){hfilt=f;document.querySelectorAll('.hfbtn').forEach(function(b){b.classList.remove('on');});btn.classList.add('on');renderHist();}
-async function clrHist(){
-  if(!confirm('Clear all transaction history? Cannot be undone.'))return;
-  showLoading('Clearing...');
-  try{await sbFetch('transactions?restaurant_id=eq.'+RID,{method:'DELETE',prefer:'return=minimal'});txLog=[];hideLoading();renderHist();renderRecent();toast('🗑 History cleared','tr');}
-  catch(e){hideLoading();toast('❌ Error: '+e.message,'tr');}
+  document.getElementById('HIST-TBL').innerHTML = rows || '<tr><td colspan="9"><div class="es"><div class="ei">📋</div>No history yet.</div></td></tr>';
 }
 
-// ══════════════════════════════════════
-//  SETTINGS
-// ══════════════════════════════════════
-function renderSettings(){
-  document.getElementById('SET-RNAME').textContent=CFG.restaurantName;
-  document.getElementById('SET-PINS-SECTION').style.display=CU.role==='admin'?'block':'none';
-  document.getElementById('SET-BOSS-SECTION').style.display=CU.role==='boss'?'block':'none';
-  if(CU.role==='boss'){document.getElementById('SET-BOSS-NAME').textContent=CFG.bossName||'';document.getElementById('SET-BOSS-NAME-SUB').textContent='How your name appears in the system';}
+// Filter history by type
+function fhist(f, btn) {
+  hfilt = f;
+  document.querySelectorAll('.hfbtn').forEach(function(b) { b.classList.remove('on'); });
+  btn.classList.add('on');
+  renderHist();
 }
-function openSetModal(type){
-  setModalType=type;
-  var titles={rname:'Edit Restaurant Name','admin-pin':'Change Admin PIN','boss-pin':'Change Boss PIN','staff-pin':'Change Staff PIN','boss-name':'Edit Display Name','my-pin':'Change My PIN'};
-  document.getElementById('SET-MODAL-TITLE').textContent=titles[type]||'Edit';
-  var body='';
-  if(type==='rname')body='<div class="frow"><label class="flbl">Restaurant Name</label><input class="finp" id="sm-val" value="'+CFG.restaurantName+'"></div>';
-  else if(type==='boss-name')body='<div class="frow"><label class="flbl">Display Name</label><input class="finp" id="sm-val" value="'+(CFG.bossName||'')+'"></div>';
-  else body='<div class="frow"><label class="flbl">New 4-digit PIN</label><input class="finp" type="password" id="sm-val" placeholder="Enter new PIN" maxlength="4"><div class="fhint">Numbers only, exactly 4 digits</div></div>';
-  document.getElementById('SET-MODAL-BODY').innerHTML=body;
+
+// Clear all history (admin only)
+async function clrHist() {
+  if (!confirm('Clear all transaction history? Cannot be undone.')) return;
+  showLoading('Clearing...');
+  try {
+    await sbFetch('transactions?restaurant_id=eq.' + RID, { method: 'DELETE', prefer: 'return=minimal' });
+    txLog = [];
+    hideLoading(); renderHist(); renderRecent(); toast('🗑 History cleared', 'tr');
+  } catch(e) { hideLoading(); toast('❌ Error: ' + e.message, 'tr'); }
+}
+
+// =============================================
+//  SETTINGS PAGE
+// =============================================
+function renderSettings() {
+  document.getElementById('SET-RNAME').textContent = CFG.restaurantName;
+  document.getElementById('SET-PINS-SECTION').style.display = CU.role === 'admin' ? 'block' : 'none';
+  document.getElementById('SET-BOSS-SECTION').style.display = CU.role === 'boss' ? 'block' : 'none';
+  if (CU.role === 'boss') {
+    document.getElementById('SET-BOSS-NAME').textContent = CFG.bossName || '';
+    document.getElementById('SET-BOSS-NAME-SUB').textContent = 'How your name appears in the system';
+  }
+}
+
+// Open settings edit modal
+function openSetModal(type) {
+  setModalType = type;
+  var titles = { rname:'Edit Restaurant Name','admin-pin':'Change Admin PIN','boss-pin':'Change Boss PIN','staff-pin':'Change Staff PIN','boss-name':'Edit Display Name','my-pin':'Change My PIN' };
+  document.getElementById('SET-MODAL-TITLE').textContent = titles[type] || 'Edit';
+  var body = '';
+  if (type === 'rname')
+    body = '<div class="frow"><label class="flbl">Restaurant Name</label><input class="finp" id="sm-val" value="' + CFG.restaurantName + '"></div>';
+  else if (type === 'boss-name')
+    body = '<div class="frow"><label class="flbl">Display Name</label><input class="finp" id="sm-val" value="' + (CFG.bossName || '') + '"></div>';
+  else
+    body = '<div class="frow"><label class="flbl">New 4-digit PIN</label><input class="finp" type="password" id="sm-val" placeholder="Enter new PIN" maxlength="4"><div class="fhint">Numbers only, exactly 4 digits</div></div>';
+  document.getElementById('SET-MODAL-BODY').innerHTML = body;
   document.getElementById('SET-MODAL').classList.add('open');
 }
-function closeSetModal(){document.getElementById('SET-MODAL').classList.remove('open');}
-async function saveSetModal(){
-  var v=document.getElementById('sm-val').value.trim();
-  if(!v){toast('⚠️ Value cannot be empty','to');return;}
-  if(setModalType.includes('pin')&&!/^\d{4}$/.test(v)){toast('⚠️ PIN must be exactly 4 digits','to');return;}
+
+function closeSetModal() { document.getElementById('SET-MODAL').classList.remove('open'); }
+
+// Save settings changes to Supabase
+async function saveSetModal() {
+  var v = document.getElementById('sm-val').value.trim();
+  if (!v) { toast('⚠️ Value cannot be empty', 'to'); return; }
+  if (setModalType.includes('pin') && !/^\d{4}$/.test(v)) { toast('⚠️ PIN must be exactly 4 digits', 'to'); return; }
   showLoading('Saving...');
   try {
-    if(setModalType==='rname'){await sbFetch('restaurants?id=eq.'+RID,{method:'PATCH',body:{name:v}});CFG.restaurantName=v;document.getElementById('app-rname').textContent=v;document.getElementById('login-rname').textContent=v;toast('✅ Name updated','tg');}
-    else if(setModalType==='admin-pin'){await sbFetch('users?restaurant_id=eq.'+RID+'&role=eq.admin',{method:'PATCH',body:{pin:v}});CFG.adminPin=v;toast('🔐 Admin PIN updated','tg');}
-    else if(setModalType==='boss-pin'){await sbFetch('users?restaurant_id=eq.'+RID+'&role=eq.boss',{method:'PATCH',body:{pin:v}});CFG.bossPin=v;toast('🔐 Boss PIN updated','tg');}
-    else if(setModalType==='staff-pin'){await sbFetch('users?restaurant_id=eq.'+RID+'&role=eq.staff',{method:'PATCH',body:{pin:v}});CFG.staffPin=v;toast('🔐 Staff PIN updated','tg');}
-    else if(setModalType==='boss-name'){await sbFetch('users?restaurant_id=eq.'+RID+'&role=eq.boss',{method:'PATCH',body:{name:v}});CFG.bossName=v;CU.name=v;document.getElementById('UNAME').textContent=v;toast('✅ Name updated','tg');}
-    else if(setModalType==='my-pin'){await sbFetch('users?restaurant_id=eq.'+RID+'&role=eq.boss',{method:'PATCH',body:{pin:v}});CFG.bossPin=v;toast('🔐 PIN updated','tg');}
-    hideLoading();closeSetModal();renderSettings();
-  } catch(e){hideLoading();toast('❌ Error: '+e.message,'tr');}
+    if (setModalType === 'rname')      { await sbFetch('restaurants?id=eq.' + RID, { method: 'PATCH', body: { name: v } }); CFG.restaurantName = v; document.getElementById('app-rname').textContent = v; document.getElementById('login-rname').textContent = v; toast('✅ Name updated', 'tg'); }
+    else if (setModalType === 'admin-pin') { await sbFetch('users?restaurant_id=eq.' + RID + '&role=eq.admin', { method: 'PATCH', body: { pin: v } }); CFG.adminPin = v; toast('🔐 Admin PIN updated', 'tg'); }
+    else if (setModalType === 'boss-pin')  { await sbFetch('users?restaurant_id=eq.' + RID + '&role=eq.boss',  { method: 'PATCH', body: { pin: v } }); CFG.bossPin  = v; toast('🔐 Boss PIN updated', 'tg'); }
+    else if (setModalType === 'staff-pin') { await sbFetch('users?restaurant_id=eq.' + RID + '&role=eq.staff', { method: 'PATCH', body: { pin: v } }); CFG.staffPin = v; toast('🔐 Staff PIN updated', 'tg'); }
+    else if (setModalType === 'boss-name') { await sbFetch('users?restaurant_id=eq.' + RID + '&role=eq.boss',  { method: 'PATCH', body: { name: v } }); CFG.bossName = v; CU.name = v; document.getElementById('UNAME').textContent = v; toast('✅ Name updated', 'tg'); }
+    else if (setModalType === 'my-pin')    { await sbFetch('users?restaurant_id=eq.' + RID + '&role=eq.boss',  { method: 'PATCH', body: { pin: v } }); CFG.bossPin  = v; toast('🔐 PIN updated', 'tg'); }
+    hideLoading(); closeSetModal(); renderSettings();
+  } catch(e) { hideLoading(); toast('❌ Error: ' + e.message, 'tr'); }
 }
 
-// ══════════════════════════════════════
-//  ADMIN
-// ══════════════════════════════════════
-function renderAdmin(){
-  document.getElementById('A-RID').textContent=RID?RID:'–';
-  document.getElementById('A-PRODS').textContent=products.length;
-  document.getElementById('A-TXN').textContent=txLog.length;
-  document.getElementById('A-LOW').textContent=products.filter(function(p){return p.stock>0&&p.stock<p.min_stock;}).length;
-  document.getElementById('A-OUT').textContent=products.filter(function(p){return p.stock===0;}).length;
-  document.getElementById('ADMIN-USERS').innerHTML=
-    '<div class="urow"><div class="ura av-admin">🔴</div><div class="uri"><div class="urn">Admin (You)</div><div class="urr">Full access</div></div></div>'+
-    '<div class="urow"><div class="ura av-boss">🟣</div><div class="uri"><div class="urn">'+(CFG.bossNameSet?CFG.bossName:'Boss (not yet logged in)')+'</div><div class="urr">Manage products &amp; stock</div></div></div>'+
+// =============================================
+//  ADMIN PANEL
+// =============================================
+function renderAdmin() {
+  document.getElementById('A-RID').textContent   = RID || '–';
+  document.getElementById('A-PRODS').textContent = products.length;
+  document.getElementById('A-TXN').textContent   = txLog.length;
+  document.getElementById('A-LOW').textContent   = products.filter(function(p) { return p.stock > 0 && p.stock < p.min_stock; }).length;
+  document.getElementById('A-OUT').textContent   = products.filter(function(p) { return p.stock === 0; }).length;
+  document.getElementById('ADMIN-USERS').innerHTML =
+    '<div class="urow"><div class="ura av-admin">🔴</div><div class="uri"><div class="urn">Admin (You)</div><div class="urr">Full access</div></div></div>' +
+    '<div class="urow"><div class="ura av-boss">🟣</div><div class="uri"><div class="urn">' + (CFG.bossNameSet ? CFG.bossName : 'Boss (not yet logged in)') + '</div><div class="urr">Manage products &amp; stock</div></div></div>' +
     '<div class="urow"><div class="ura av-staff">🟢</div><div class="uri"><div class="urn">Staff</div><div class="urr">Shared PIN — scan &amp; view</div></div></div>';
 }
 
-// ══════════════════════════════════════
-//  TOAST
-// ══════════════════════════════════════
-function toast(msg,cls){var w=document.getElementById('TOASTS'),t=document.createElement('div');t.className='toast '+(cls||'');t.innerHTML='<span>'+(cls==='tg'?'✅':cls==='tr'?'❌':'⚠️')+'</span><span>'+msg+'</span>';w.appendChild(t);setTimeout(function(){if(t.parentNode)t.parentNode.removeChild(t);},3000);}
+// =============================================
+//  TOAST NOTIFICATIONS
+//  Shows a small popup at bottom right
+//  cls: 'tg' = green (success), 'tr' = red (error), 'to' = orange (warning)
+// =============================================
+function toast(msg, cls) {
+  var w = document.getElementById('TOASTS');
+  var t = document.createElement('div');
+  t.className = 'toast ' + (cls || '');
+  t.innerHTML = '<span>' + (cls === 'tg' ? '✅' : cls === 'tr' ? '❌' : '⚠️') + '</span><span>' + msg + '</span>';
+  w.appendChild(t);
+  setTimeout(function() { if (t.parentNode) t.parentNode.removeChild(t); }, 3000);
+}
 
-// ══════════════════════════════════════
+// =============================================
+//  KEYBOARD SUPPORT
+//  Numbers 0-9: enter PIN digit
+//  Backspace: delete last digit
+//  Other keys: ignored
+// =============================================
+document.addEventListener('keydown', function(e) {
+  var k = e.key;
+  var isNum = (k >= '0' && k <= '9');
+  var isDel = (k === 'Backspace');
+  if (!isNum && !isDel) return; // ignore all other keys silently
+
+  // Login screen
+  if (document.getElementById('SCR-LOGIN').classList.contains('on')) {
+    if (isNum) lpp(k);
+    else if (isDel) ldel();
+    return;
+  }
+  // Wizard PIN steps
+  if (document.getElementById('SCR-SETUP').classList.contains('on')) {
+    var who = wizStep === 1 ? 'admin' : wizStep === 2 ? 'boss' : wizStep === 3 ? 'staff' : null;
+    if (!who) return;
+    if (isNum) wkp(who, k);
+    else if (isDel) wdel(who);
+  }
+});
+
+// =============================================
 //  START
-// ══════════════════════════════════════
+//  This runs when the page loads
+// =============================================
 init();
 </script>
 </body>
