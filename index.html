@@ -1097,9 +1097,20 @@ tr:hover td { background: var(--bg); }
 var SB_URL = 'https://kdmzwgdyaylutumwnbtj.supabase.co';
 var SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtkbXp3Z2R5YXlsdXR1bXduYnRqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM3MjQwODIsImV4cCI6MjA4OTMwMDA4Mn0.F23mqc-wBzePjRhkomzYaXX8RcxJ75KyotTjBicBV7Y';
 
-// Generic function to call Supabase REST API
-// path = table name + filters, e.g. 'products?restaurant_id=eq.123'
-// opts = { method, body, prefer }
+// =============================================
+//  FUNCTION: sbFetch
+//  PURPOSE : Generic HTTP request helper for Supabase REST API.
+//            Builds the correct headers (API key, auth token, content type)
+//            and returns parsed JSON. Throws an error if the response is not OK.
+//  PARAMS  : path  - Supabase table + query string, e.g. 'products?restaurant_id=eq.123'
+//            opts  - Optional object: { method, body, prefer }
+//                    method  = HTTP verb (GET, POST, PATCH, DELETE). Default: 'GET'
+//                    body    = JS object to send as JSON payload (for POST/PATCH)
+//                    prefer  = Supabase Prefer header value. Default: 'return=representation'
+//  RETURNS : Parsed JSON array/object from Supabase, or empty array [] if body is empty.
+//  CALLED BY: init, wizNext, saveBossName, loadAppData, stockAct, saveProd,
+//             saveMin, confDel, clrHist, saveSetModal
+// =============================================
 async function sbFetch(path, opts) {
   opts = opts || {};
   var res = await fetch(SB_URL + '/rest/v1/' + path, {
@@ -1134,19 +1145,38 @@ var setModalType = '';   // which setting is being edited
 var hfilt    = 'all';   // history filter: 'all', 'IN', 'OUT'
 
 // =============================================
-//  LOADING HELPERS
+//  FUNCTION: showLoading
+//  PURPOSE : Shows the full-screen loading overlay with a custom message.
+//            Used during Supabase API calls to block UI and indicate progress.
+//  PARAMS  : t - String message to display below the spinner (e.g. "Loading...")
+//  CALLED BY: init, wizNext, saveBossName, loadAppData, stockAct, saveProd,
+//             saveMin, confDel, clrHist, saveSetModal, factoryReset is excluded (no loading shown)
 // =============================================
 function showLoading(t) {
   document.getElementById('LOADING-TXT').textContent = t || 'Loading...';
   document.getElementById('LOADING').classList.add('on');
 }
+
+// =============================================
+//  FUNCTION: hideLoading
+//  PURPOSE : Hides the full-screen loading overlay by removing the 'on' CSS class.
+//            Always called after an async Supabase operation finishes (success or error).
+//  PARAMS  : none
+//  CALLED BY: init, wizNext, saveBossName, loadAppData, stockAct, saveProd,
+//             saveMin, confDel, clrHist, saveSetModal
+// =============================================
 function hideLoading() {
   document.getElementById('LOADING').classList.remove('on');
 }
 
 // =============================================
-//  SCREEN SWITCHER
-//  Only one screen shows at a time
+//  FUNCTION: showScreen
+//  PURPOSE : Switches the visible screen by removing 'on' from all .screen elements,
+//            then adding 'on' to the screen with the given ID.
+//            Only one screen can be visible at a time.
+//  PARAMS  : id - Element ID string of the screen to show
+//                 Valid values: 'SCR-SETUP', 'SCR-LOGIN', 'SCR-SETNAME'
+//  CALLED BY: init, wizNext, tryLogin, saveBossName, startApp, doLogout
 // =============================================
 function showScreen(id) {
   document.querySelectorAll('.screen').forEach(function(s) { s.classList.remove('on'); });
@@ -1155,9 +1185,14 @@ function showScreen(id) {
 }
 
 // =============================================
-//  INIT
-//  Runs on page load. Checks if restaurant is registered.
-//  If yes → show login. If no → show setup wizard.
+//  FUNCTION: init  (ASYNC)
+//  PURPOSE : Entry point — runs when the page first loads.
+//            Checks localStorage for a saved restaurant ID (ss_rid).
+//            If found → loads restaurant and user config from Supabase → shows login screen.
+//            If not found → shows first-time setup wizard.
+//            Also handles DB connection errors with a toast warning.
+//  PARAMS  : none
+//  CALLS   : showLoading, sbFetch, hideLoading, showScreen, wizUpdateSteps, toast
 // =============================================
 async function init() {
   showLoading('Connecting to database...');
@@ -1193,9 +1228,14 @@ async function init() {
 }
 
 // =============================================
-//  FACTORY RESET
-//  Removes device registration (clears ss_rid)
-//  Database data is NOT deleted
+//  FUNCTION: factoryReset
+//  PURPOSE : Removes this device's restaurant registration by clearing 'ss_rid'
+//            from localStorage. The Supabase database is NOT touched — all products
+//            and history remain. After confirmation, shows a toast and reloads the page,
+//            which will trigger the setup wizard again.
+//  PARAMS  : none
+//  CALLS   : toast, location.reload
+//  TRIGGERED BY: "🗑 Reset" button in Settings page
 // =============================================
 function factoryReset() {
   if (!confirm('Remove this device from the restaurant?\n\nDatabase data will remain. This device will go back to setup.')) return;
@@ -1205,7 +1245,10 @@ function factoryReset() {
 }
 
 // =============================================
-//  SETUP WIZARD
+//  SETUP WIZARD STATE VARIABLES
+//  wizStep  : Current step index (0=name, 1=admin PIN, 2=boss PIN, 3=staff PIN)
+//  wPins    : Object storing the 4-digit PIN entered for each role during wizard
+//  wAdminDone / wBossDone / wStaffDone : Flags set to true when a full 4-digit PIN is entered
 // =============================================
 var wizStep = 0;
 // Stores PINs entered during setup
@@ -1213,7 +1256,16 @@ var wPins = { admin: '', boss: '', staff: '' };
 // Tracks if each PIN is fully entered (4 digits)
 var wAdminDone = false, wBossDone = false, wStaffDone = false;
 
-// Update step bar and show correct step content
+// =============================================
+//  FUNCTION: wizUpdateSteps
+//  PURPOSE : Refreshes the wizard's progress bar and step content visibility.
+//            Marks steps as 'done' (green), 'active' (orange), or default (grey).
+//            Shows the correct step's form content (wstep0–wstep3) and toggles
+//            the Back button visibility. Changes Next button text to "🚀 Start System"
+//            on the final step.
+//  PARAMS  : none
+//  CALLED BY: init, wizNext, wizBack
+// =============================================
 function wizUpdateSteps() {
   for (var i = 0; i < 4; i++) {
     var el = document.getElementById('ws' + i);
@@ -1226,7 +1278,20 @@ function wizUpdateSteps() {
   document.getElementById('wiz-next').textContent = wizStep === 3 ? '🚀 Start System' : 'Next →';
 }
 
-// Next button handler
+// =============================================
+//  FUNCTION: wizNext  (ASYNC)
+//  PURPOSE : Handles the "Next" / "Start System" button in the setup wizard.
+//            - Step 0: Validates restaurant name is not empty, advances to step 1.
+//            - Step 1: Validates admin PIN is complete (4 digits), advances to step 2.
+//            - Step 2: Validates boss PIN is complete and different from admin PIN, advances to step 3.
+//            - Step 3: Validates staff PIN is complete and unique from admin+boss PINs.
+//                      On success → registers restaurant + 3 users in Supabase,
+//                      saves restaurant ID to localStorage, then shows login screen.
+//  PARAMS  : none
+//  CALLS   : toast, wizUpdateSteps, showLoading, sbFetch, hideLoading, showScreen,
+//            rdotsW
+//  TRIGGERED BY: "Next →" / "🚀 Start System" button in wizard footer
+// =============================================
 async function wizNext() {
   if (wizStep === 0) {
     // Validate restaurant name
@@ -1285,7 +1350,16 @@ async function wizNext() {
   }
 }
 
-// Back button — go to previous step and reset that step's PIN
+// =============================================
+//  FUNCTION: wizBack
+//  PURPOSE : Goes back to the previous wizard step.
+//            Resets (clears) the PIN that was entered for the step being left,
+//            then also resets the step we land on — so the user must re-enter it.
+//            Hides the Back button on step 0 (handled by wizUpdateSteps).
+//  PARAMS  : none
+//  CALLS   : rdotsW, wizUpdateSteps
+//  TRIGGERED BY: "← Back" button in wizard footer
+// =============================================
 function wizBack() {
   if (wizStep === 1) { wAdminDone = false; wPins.admin = ''; rdotsW('wad', ''); }
   else if (wizStep === 2) { wBossDone = false; wPins.boss = ''; rdotsW('wbd', ''); }
@@ -1297,7 +1371,17 @@ function wizBack() {
   else if (wizStep === 3) { wStaffDone = false; wPins.staff = ''; rdotsW('wsd', ''); }
 }
 
-// Keypad press — add digit to current PIN
+// =============================================
+//  FUNCTION: wkp  (Wizard Keypad Press)
+//  PURPOSE : Appends one digit to the PIN for the specified role during wizard setup.
+//            Ignores input if PIN is already 4 digits. When the 4th digit is entered,
+//            marks all 4 dots green (class 'ok') and sets the corresponding Done flag.
+//  PARAMS  : who - Role string: 'admin', 'boss', or 'staff'
+//            d   - Single digit character: '0' through '9'
+//  CALLS   : rdotsW
+//  TRIGGERED BY: Keypad number buttons in wizard steps 1, 2, 3
+//                Also keyboard handler (keydown event) for number keys
+// =============================================
 function wkp(who, d) {
   if (who === 'admin') {
     if (wPins.admin.length < 4) {
@@ -1317,21 +1401,45 @@ function wkp(who, d) {
   }
 }
 
-// Delete last digit (works even after PIN is complete, so user can fix mistakes)
+// =============================================
+//  FUNCTION: wdel  (Wizard Delete)
+//  PURPOSE : Removes the last digit from the PIN for the given role.
+//            Also resets the Done flag for that role — allows the user
+//            to correct a completed 4-digit PIN by backspacing.
+//  PARAMS  : who - Role string: 'admin', 'boss', or 'staff'
+//  CALLS   : rdotsW
+//  TRIGGERED BY: "⌫" (DEL) keypad button in wizard steps 1, 2, 3
+//                Also keyboard Backspace key via keydown event handler
+// =============================================
 function wdel(who) {
   if (who === 'admin') { wAdminDone = false; wPins.admin = wPins.admin.slice(0,-1); rdotsW('wad', wPins.admin); }
   else if (who === 'boss') { wBossDone = false; wPins.boss = wPins.boss.slice(0,-1); rdotsW('wbd', wPins.boss); }
   else { wStaffDone = false; wPins.staff = wPins.staff.slice(0,-1); rdotsW('wsd', wPins.staff); }
 }
 
-// Clear all digits
+// =============================================
+//  FUNCTION: wclr  (Wizard Clear)
+//  PURPOSE : Clears all entered digits for the given role's PIN,
+//            resets its Done flag, and refreshes the dot display to empty.
+//  PARAMS  : who - Role string: 'admin', 'boss', or 'staff'
+//  CALLS   : rdotsW
+//  TRIGGERED BY: "CLR" keypad button in wizard steps 1, 2, 3
+// =============================================
 function wclr(who) {
   if (who === 'admin') { wAdminDone = false; wPins.admin = ''; rdotsW('wad', ''); }
   else if (who === 'boss') { wBossDone = false; wPins.boss = ''; rdotsW('wbd', ''); }
   else { wStaffDone = false; wPins.staff = ''; rdotsW('wsd', ''); }
 }
 
-// Update PIN dot display (f = filled, ok = green)
+// =============================================
+//  FUNCTION: rdotsW  (Render Dots for Wizard)
+//  PURPOSE : Updates the 4 PIN dot elements for a wizard step.
+//            Dots that have a corresponding entered digit get class 'f' (filled/orange).
+//            Dots beyond the entered length stay empty (no class).
+//  PARAMS  : pfx - DOM ID prefix of the 4 dot elements (e.g. 'wad', 'wbd', 'wsd')
+//            val - Current PIN string (e.g. '12' fills dots 0 and 1)
+//  CALLED BY: wkp, wdel, wclr, wizBack, wizNext (on error reset)
+// =============================================
 function rdotsW(pfx, val) {
   for (var i = 0; i < 4; i++) {
     document.getElementById(pfx + i).className = 'pdot' + (i < val.length ? ' f' : '');
@@ -1339,21 +1447,54 @@ function rdotsW(pfx, val) {
 }
 
 // =============================================
-//  LOGIN
+//  LOGIN STATE VARIABLE
+//  loginPin : String holding the digits entered so far on the login screen (max 4)
 // =============================================
 var loginPin = '';
 
-// Add digit to login PIN
+// =============================================
+//  FUNCTION: lpp  (Login PIN Press)
+//  PURPOSE : Appends one digit to the login PIN. Ignores input if 4 digits already
+//            entered. After the 4th digit, waits 150ms then auto-submits via tryLogin.
+//  PARAMS  : d - Single digit character: '0' through '9'
+//  CALLS   : renderLoginDots, tryLogin (via setTimeout)
+//  TRIGGERED BY: Keypad number buttons on login screen
+//                Also keyboard number keys via keydown event handler
+// =============================================
 function lpp(d) {
   if (loginPin.length >= 4) return;
   loginPin += d;
   renderLoginDots();
   if (loginPin.length === 4) setTimeout(tryLogin, 150);
 }
+
+// =============================================
+//  FUNCTION: ldel  (Login Delete)
+//  PURPOSE : Removes the last digit from the login PIN and refreshes the dot display.
+//  PARAMS  : none
+//  CALLS   : renderLoginDots
+//  TRIGGERED BY: "⌫" (DEL) keypad button on login screen
+//                Also keyboard Backspace key via keydown event handler
+// =============================================
 function ldel() { loginPin = loginPin.slice(0, -1); renderLoginDots(); }
+
+// =============================================
+//  FUNCTION: lclr  (Login Clear)
+//  PURPOSE : Clears all entered digits from the login PIN and refreshes the dot display.
+//  PARAMS  : none
+//  CALLS   : renderLoginDots
+//  TRIGGERED BY: "CLR" keypad button on login screen
+// =============================================
 function lclr() { loginPin = ''; renderLoginDots(); }
 
-// Update the 4 login dots
+// =============================================
+//  FUNCTION: renderLoginDots
+//  PURPOSE : Updates the 4 login dot elements based on the current loginPin length.
+//            - Normal: Filled dots (class 'f') for entered digits, empty for the rest.
+//            - Error:  All 4 dots get class 'err' (shake animation + red color).
+//  PARAMS  : err - Optional boolean. If true, all dots show the error state.
+//  CALLED BY: lpp, ldel, lclr, tryLogin, doLogout
+// =============================================
 function renderLoginDots(err) {
   for (var i = 0; i < 4; i++) {
     var d = document.getElementById('lp' + i);
@@ -1361,7 +1502,17 @@ function renderLoginDots(err) {
   }
 }
 
-// Check PIN against admin/boss/staff
+// =============================================
+//  FUNCTION: tryLogin  (ASYNC)
+//  PURPOSE : Checks the entered 4-digit PIN against admin, boss, and staff PINs.
+//            - Correct admin/boss/staff PIN → sets CU (current user), loads app data,
+//              starts the app. Boss with no name set → redirects to SCR-SETNAME first.
+//            - Wrong PIN → triggers shake animation on dots, shows error text,
+//              clears loginPin after 1.2 seconds.
+//  PARAMS  : none
+//  CALLS   : renderLoginDots, showScreen, loadAppData, startApp, toast (indirectly)
+//  TRIGGERED BY: lpp (auto-called after 4th digit entered)
+// =============================================
 async function tryLogin() {
   var role = null;
   if (loginPin === CFG.adminPin) role = 'admin';
@@ -1386,7 +1537,13 @@ async function tryLogin() {
 }
 
 // =============================================
-//  BOSS NAME SETUP (first login)
+//  FUNCTION: saveBossName  (ASYNC)
+//  PURPOSE : Saves the Boss's display name on their very first login.
+//            Validates that name is not empty, then PATCHes the boss user record
+//            in Supabase. Updates CFG and CU in memory, then loads app data and starts app.
+//  PARAMS  : none
+//  CALLS   : toast, showLoading, sbFetch, hideLoading, loadAppData, startApp
+//  TRIGGERED BY: "✅ Continue" button on SCR-SETNAME screen
 // =============================================
 async function saveBossName() {
   var n = document.getElementById('boss-name-inp').value.trim();
@@ -1403,8 +1560,14 @@ async function saveBossName() {
 }
 
 // =============================================
-//  LOAD DATA FROM SUPABASE
-//  Called after login — loads products and history
+//  FUNCTION: loadAppData  (ASYNC)
+//  PURPOSE : Fetches all products and the last 200 transactions for this restaurant
+//            from Supabase and stores them in the 'products' and 'txLog' arrays.
+//            Called after every successful login to populate in-memory data.
+//            Gracefully handles errors by defaulting to empty arrays and showing a toast.
+//  PARAMS  : none
+//  CALLS   : showLoading, sbFetch, hideLoading, toast
+//  CALLED BY: tryLogin, saveBossName
 // =============================================
 async function loadAppData() {
   showLoading('Loading data...');
@@ -1421,8 +1584,17 @@ async function loadAppData() {
 }
 
 // =============================================
-//  START APP
-//  Sets up the main app UI after successful login
+//  FUNCTION: startApp
+//  PURPOSE : Initialises and renders the main application shell after login.
+//            - Shows the #APP div and hides the login screen.
+//            - Sets the restaurant name, user avatar, name chip, and role badge.
+//            - Dynamically builds the top navigation bar based on the current user's role
+//              (staff sees fewer tabs than boss/admin).
+//            - Shows/hides role-sensitive UI elements (Add Product button, Clear History button).
+//            - Navigates to the Dashboard page by default.
+//  PARAMS  : none
+//  CALLS   : showScreen, showPage
+//  CALLED BY: tryLogin, saveBossName
 // =============================================
 function startApp() {
   showScreen('SCR-LOGIN');
@@ -1466,7 +1638,16 @@ function startApp() {
   showPage('dashboard');
 }
 
-// Logout — clear user and go back to login
+// =============================================
+//  FUNCTION: doLogout
+//  PURPOSE : Logs the current user out by resetting all session state.
+//            Clears CU, loginPin, curProd, products, and txLog.
+//            Hides the #APP div and shows the login screen.
+//            Resets the scan result box and login dots.
+//  PARAMS  : none
+//  CALLS   : renderLoginDots, showScreen
+//  TRIGGERED BY: "⏏ Logout" button in topbar
+// =============================================
 function doLogout() {
   CU = null; loginPin = ''; renderLoginDots();
   document.getElementById('APP').style.display = 'none';
@@ -1478,7 +1659,16 @@ function doLogout() {
 }
 
 // =============================================
-//  PAGE NAVIGATION
+//  FUNCTION: showPage
+//  PURPOSE : Switches the visible content page inside the main app.
+//            Removes 'on' from all .page divs and .tnav buttons, then activates
+//            the target page and its corresponding nav button.
+//            Also triggers the appropriate render function for each page and
+//            auto-focuses the scan input on the Scan page.
+//  PARAMS  : p - Page ID suffix string. Valid values:
+//                'dashboard', 'scan', 'products', 'history', 'settings', 'admin'
+//  CALLS   : rdash, renderProds, renderHist, renderSettings, renderAdmin
+//  TRIGGERED BY: Nav buttons in topbar, startApp, "📷 Start Scanning" on Dashboard
 // =============================================
 function showPage(p) {
   document.querySelectorAll('.page').forEach(function(el) { el.classList.remove('on'); });
@@ -1495,7 +1685,16 @@ function showPage(p) {
 }
 
 // =============================================
-//  DASHBOARD
+//  FUNCTION: rdash  (Render Dashboard)
+//  PURPOSE : Builds the Dashboard page content:
+//            - Calculates total, in-stock, low-stock, and out-of-stock counts.
+//            - Renders the 4 stat cards (SGRID).
+//            - Shows/hides the yellow alert banner with item count.
+//            - Renders the "Items Needing Attention" table with products
+//              whose stock is below their minimum level.
+//  PARAMS  : none
+//  CALLS   : scard, openMinModal
+//  CALLED BY: showPage
 // =============================================
 function rdash() {
   var total = products.length;
@@ -1535,13 +1734,32 @@ function rdash() {
   document.getElementById('LOW-TBL').innerHTML = rows || '<tr><td colspan="7"><div class="es"><div class="ei">✅</div>All items are well stocked!</div></td></tr>';
 }
 
-// Helper to build a stat card
+// =============================================
+//  FUNCTION: scard  (Stat Card HTML)
+//  PURPOSE : Returns HTML string for one dashboard stat card.
+//            Used to build the 4 summary cards (Total, In Stock, Low, Out).
+//  PARAMS  : label - Card heading text (e.g. 'Total Products')
+//            val   - Numeric value to display in large monospace font
+//            color - CSS color value for the number (e.g. 'var(--green)')
+//  RETURNS : HTML string for a .scard div
+//  CALLED BY: rdash
+// =============================================
 function scard(label, val, color) {
   return '<div class="scard"><div class="sc-label">' + label + '</div><div class="sc-val" style="color:' + color + ';">' + val + '</div></div>';
 }
 
 // =============================================
-//  SCAN PAGE
+//  FUNCTION: doScan
+//  PURPOSE : Handles barcode lookup when user scans or types + presses "Scan" / Enter.
+//            Reads the value from the scan input field and searches the products array.
+//            - Not found → error toast.
+//            - Found → populates the result box (RES-BOX) with product info, stock level
+//              (color-coded), unit selector, and shows the result box.
+//              Clears the scan input for the next scan.
+//  PARAMS  : none
+//  CALLS   : toast
+//  TRIGGERED BY: "🔍 Scan" button on Scan page
+//                Enter key on scan input (onkeydown handler)
 // =============================================
 function doScan() {
   var bc = document.getElementById('SCAN-INP').value.trim();
@@ -1562,6 +1780,13 @@ function doScan() {
   document.getElementById('SCAN-INP').value = '';
 }
 
+// =============================================
+//  FUNCTION: clearScan
+//  PURPOSE : Resets the scan page — hides the result box, clears curProd,
+//            clears the scan input, and re-focuses it for the next scan.
+//  PARAMS  : none
+//  TRIGGERED BY: "✕" cancel button in the scan result box
+// =============================================
 function clearScan() {
   curProd = null;
   document.getElementById('RES-BOX').classList.remove('on');
@@ -1569,7 +1794,21 @@ function clearScan() {
   document.getElementById('SCAN-INP').focus();
 }
 
-// Stock IN or OUT action
+// =============================================
+//  FUNCTION: stockAct  (ASYNC)  (Stock Action)
+//  PURPOSE : Performs a Stock IN or Stock OUT transaction for the currently scanned product.
+//            - Validates quantity is positive.
+//            - For OUT: validates there is enough stock.
+//            - Calculates new stock (before ± qty).
+//            - PATCHes product stock in Supabase.
+//            - POSTs a transaction record with all details to Supabase.
+//            - Updates in-memory products and txLog arrays.
+//            - Refreshes the stock display number in the result box.
+//            - Shows success/error toast and refreshes the Recent Activity table.
+//  PARAMS  : type - String: 'IN' (stock received) or 'OUT' (stock consumed/removed)
+//  CALLS   : toast, showLoading, sbFetch, hideLoading, renderRecent
+//  TRIGGERED BY: "➕ Stock IN" button and "➖ Stock OUT" button in scan result box
+// =============================================
 async function stockAct(type) {
   if (!curProd) return;
   var qty = parseInt(document.getElementById('QTY').value) || 1;
@@ -1609,7 +1848,14 @@ async function stockAct(type) {
   } catch(e) { hideLoading(); toast('❌ Error: ' + e.message, 'tr'); }
 }
 
-// Show recent transactions at bottom of scan page
+// =============================================
+//  FUNCTION: renderRecent
+//  PURPOSE : Re-renders the "Recent Activity" table at the bottom of the Scan page.
+//            Shows the last 10 transactions from txLog with color-coded IN/OUT rows,
+//            timestamps, product name, barcode, quantity change, unit, and stock after.
+//  PARAMS  : none
+//  CALLED BY: stockAct
+// =============================================
 function renderRecent() {
   var rows = txLog.slice(0, 10).map(function(h) {
     var t = h.type === 'IN';
@@ -1628,7 +1874,16 @@ function renderRecent() {
 }
 
 // =============================================
-//  PRODUCTS PAGE
+//  FUNCTION: renderProds  (Render Products)
+//  PURPOSE : Rebuilds the product list table on the Products page.
+//            Filters products by the search box value (name, barcode, or supplier).
+//            Each row shows product info, stock status badge, and action buttons.
+//            Action buttons (Edit, Set Min, Delete) are only rendered for admin/boss;
+//            staff see a dash.
+//  PARAMS  : none
+//  CALLS   : openEditProd, openMinModal, openDelModal
+//  CALLED BY: showPage, saveProd, saveMin, confDel
+//             Also triggered live by oninput on the search box (#PROD-SRCH)
 // =============================================
 function renderProds() {
   var q = (document.getElementById('PROD-SRCH').value || '').toLowerCase();
@@ -1654,6 +1909,13 @@ function renderProds() {
   document.getElementById('PROD-TBL').innerHTML = rows || '<tr><td colspan="8"><div class="es"><div class="ei">📦</div>No products yet.</div></td></tr>';
 }
 
+// =============================================
+//  FUNCTION: openAddProd
+//  PURPOSE : Opens the product modal in "Add" mode.
+//            Clears all form fields and the hidden EDIT-ID, then shows the modal.
+//  PARAMS  : none
+//  TRIGGERED BY: "➕ Add Product" button on Products page header (admin/boss only)
+// =============================================
 function openAddProd() {
   document.getElementById('PROD-MODAL-TITLE').textContent = 'Add Product';
   document.getElementById('EDIT-ID').value = '';
@@ -1667,6 +1929,14 @@ function openAddProd() {
   document.getElementById('PROD-MODAL').classList.add('open');
 }
 
+// =============================================
+//  FUNCTION: openEditProd
+//  PURPOSE : Opens the product modal in "Edit" mode for an existing product.
+//            Finds the product by ID, pre-fills all form fields with current data,
+//            stores the ID in the hidden EDIT-ID input, then shows the modal.
+//  PARAMS  : id - Product ID string to look up in the products array
+//  TRIGGERED BY: "✏️ Edit" button in product table row (admin/boss only)
+// =============================================
 function openEditProd(id) {
   var p = products.find(function(x) { return x.id === id; }); if (!p) return;
   document.getElementById('PROD-MODAL-TITLE').textContent = 'Edit Product';
@@ -1681,8 +1951,26 @@ function openEditProd(id) {
   document.getElementById('PROD-MODAL').classList.add('open');
 }
 
+// =============================================
+//  FUNCTION: closeProdModal
+//  PURPOSE : Closes the Add/Edit product modal by removing the 'open' CSS class.
+//  PARAMS  : none
+//  TRIGGERED BY: "Cancel" button and "✕" close button in product modal
+// =============================================
 function closeProdModal() { document.getElementById('PROD-MODAL').classList.remove('open'); }
 
+// =============================================
+//  FUNCTION: saveProd  (ASYNC)
+//  PURPOSE : Saves a new or edited product to Supabase.
+//            Validates that name and barcode are present, and checks for duplicate barcodes.
+//            Auto-assigns an emoji icon based on the selected category.
+//            - If EDIT-ID is set → PATCH existing product, update in memory.
+//            - If EDIT-ID is empty → POST new product, push to products array.
+//            Closes modal and re-renders product table on success.
+//  PARAMS  : none
+//  CALLS   : toast, showLoading, sbFetch, hideLoading, closeProdModal, renderProds
+//  TRIGGERED BY: "💾 Save" button in product modal
+// =============================================
 async function saveProd() {
   var name  = document.getElementById('F-NAME').value.trim();
   var bc    = document.getElementById('F-BC').value.trim();
@@ -1719,7 +2007,15 @@ async function saveProd() {
   } catch(e) { hideLoading(); toast('❌ Error: ' + e.message, 'tr'); }
 }
 
-// Min stock modal
+// =============================================
+//  FUNCTION: openMinModal  (Open Minimum Stock Modal)
+//  PURPOSE : Opens the "Set Minimum Stock" modal for a specific product.
+//            Pre-fills the modal with the product name, barcode, current stock,
+//            and existing min_stock value. Stores product ID in editMinId.
+//  PARAMS  : id - Product ID string to look up in the products array
+//  TRIGGERED BY: "⚠️ Set Min" button on dashboard low-stock table
+//                "⚠️" button in product table row (admin/boss only)
+// =============================================
 function openMinModal(id) {
   var p = products.find(function(x) { return x.id === id; }); if (!p) return;
   editMinId = id;
@@ -1728,7 +2024,24 @@ function openMinModal(id) {
   document.getElementById('MIN-VAL').value = p.min_stock;
   document.getElementById('MIN-MODAL').classList.add('open');
 }
+
+// =============================================
+//  FUNCTION: closeMinModal
+//  PURPOSE : Closes the minimum stock modal and clears the editMinId state variable.
+//  PARAMS  : none
+//  TRIGGERED BY: "Cancel" button and "✕" close button in min stock modal
+// =============================================
 function closeMinModal() { document.getElementById('MIN-MODAL').classList.remove('open'); editMinId = null; }
+
+// =============================================
+//  FUNCTION: saveMin  (ASYNC)  (Save Minimum Stock)
+//  PURPOSE : Saves the updated minimum stock level for a product to Supabase.
+//            Reads the value from MIN-VAL input, PATCHes the product record,
+//            updates in-memory products array, then re-renders products and dashboard.
+//  PARAMS  : none
+//  CALLS   : showLoading, sbFetch, hideLoading, toast, closeMinModal, renderProds, rdash
+//  TRIGGERED BY: "⚠️ Set" button in min stock modal
+// =============================================
 async function saveMin() {
   var v = parseInt(document.getElementById('MIN-VAL').value) || 0;
   var p = products.find(function(x) { return x.id === editMinId; }); if (!p) return;
@@ -1740,14 +2053,38 @@ async function saveMin() {
   } catch(e) { hideLoading(); toast('❌ Error: ' + e.message, 'tr'); }
 }
 
-// Delete product modal
+// =============================================
+//  FUNCTION: openDelModal  (Open Delete Modal)
+//  PURPOSE : Opens the delete confirmation modal for a product.
+//            Finds the product by ID, fills the modal with the product name,
+//            and stores the ID in deletingId for use by confDel.
+//  PARAMS  : id - Product ID string to look up in the products array
+//  TRIGGERED BY: "🗑" delete button in product table row (admin/boss only)
+// =============================================
 function openDelModal(id) {
   var p = products.find(function(x) { return x.id === id; }); if (!p) return;
   deletingId = id;
   document.getElementById('DEL-NAME').textContent = p.name;
   document.getElementById('DEL-MODAL').classList.add('open');
 }
+
+// =============================================
+//  FUNCTION: closeDelModal
+//  PURPOSE : Closes the delete confirmation modal and clears the deletingId state variable.
+//  PARAMS  : none
+//  TRIGGERED BY: "Cancel" button and "✕" close button in delete modal
+// =============================================
 function closeDelModal() { document.getElementById('DEL-MODAL').classList.remove('open'); deletingId = null; }
+
+// =============================================
+//  FUNCTION: confDel  (ASYNC)  (Confirm Delete)
+//  PURPOSE : Permanently deletes the product (stored in deletingId) from Supabase.
+//            On success, removes it from the in-memory products array,
+//            closes the modal, and re-renders the product table.
+//  PARAMS  : none
+//  CALLS   : showLoading, sbFetch, hideLoading, toast, closeDelModal, renderProds
+//  TRIGGERED BY: "🗑 Delete" confirm button in delete modal
+// =============================================
 async function confDel() {
   showLoading('Deleting...');
   try {
@@ -1758,7 +2095,14 @@ async function confDel() {
 }
 
 // =============================================
-//  HISTORY PAGE
+//  FUNCTION: renderHist  (Render History)
+//  PURPOSE : Builds the transaction history table on the History page.
+//            Applies the current filter (hfilt: 'all', 'IN', or 'OUT').
+//            Staff users see only their own transactions (filtered by by_user === CU.name).
+//            Rows are color-coded: green left border for IN, red for OUT.
+//            Shows date, time, product, type badge, qty, unit, before/after stock, user.
+//  PARAMS  : none
+//  CALLED BY: showPage, fhist, clrHist
 // =============================================
 function renderHist() {
   var list = hfilt === 'all' ? txLog : txLog.filter(function(h) { return h.type === hfilt; });
@@ -1781,7 +2125,15 @@ function renderHist() {
   document.getElementById('HIST-TBL').innerHTML = rows || '<tr><td colspan="9"><div class="es"><div class="ei">📋</div>No history yet.</div></td></tr>';
 }
 
-// Filter history by type
+// =============================================
+//  FUNCTION: fhist  (Filter History)
+//  PURPOSE : Sets the active history filter and re-renders the history table.
+//            Updates the hfilt variable and toggles the 'on' class on filter buttons.
+//  PARAMS  : f   - Filter string: 'all', 'IN', or 'OUT'
+//            btn - The button DOM element that was clicked (to set it as active)
+//  CALLS   : renderHist
+//  TRIGGERED BY: "All", "Stock IN", "Stock OUT" filter buttons on History page
+// =============================================
 function fhist(f, btn) {
   hfilt = f;
   document.querySelectorAll('.hfbtn').forEach(function(b) { b.classList.remove('on'); });
@@ -1789,7 +2141,16 @@ function fhist(f, btn) {
   renderHist();
 }
 
-// Clear all history (admin only)
+// =============================================
+//  FUNCTION: clrHist  (ASYNC)  (Clear History)
+//  PURPOSE : Deletes ALL transaction records for this restaurant from Supabase
+//            after a confirmation prompt. Clears the in-memory txLog array.
+//            Re-renders both history and recent activity tables.
+//            Only accessible to admin (button hidden for others in startApp).
+//  PARAMS  : none
+//  CALLS   : showLoading, sbFetch, hideLoading, renderHist, renderRecent, toast
+//  TRIGGERED BY: "🗑 Clear" button on History page (admin only)
+// =============================================
 async function clrHist() {
   if (!confirm('Clear all transaction history? Cannot be undone.')) return;
   showLoading('Clearing...');
@@ -1801,7 +2162,13 @@ async function clrHist() {
 }
 
 // =============================================
-//  SETTINGS PAGE
+//  FUNCTION: renderSettings
+//  PURPOSE : Populates the Settings page with current values from CFG and CU.
+//            Shows/hides the PIN management section (admin only) and the
+//            "My Account" section (boss only).
+//            Fills in restaurant name and boss display name display values.
+//  PARAMS  : none
+//  CALLED BY: showPage, saveSetModal (via closeSetModal chain)
 // =============================================
 function renderSettings() {
   document.getElementById('SET-RNAME').textContent = CFG.restaurantName;
@@ -1813,7 +2180,17 @@ function renderSettings() {
   }
 }
 
-// Open settings edit modal
+// =============================================
+//  FUNCTION: openSetModal  (Open Settings Modal)
+//  PURPOSE : Opens the settings edit modal for the given setting type.
+//            Sets the modal title and dynamically injects the correct form input:
+//            - Text input for restaurant name and boss display name.
+//            - Password input (type="password") for any PIN change.
+//            Stores the type in setModalType for use by saveSetModal.
+//  PARAMS  : type - String identifying what to edit. Valid values:
+//                   'rname', 'admin-pin', 'boss-pin', 'staff-pin', 'boss-name', 'my-pin'
+//  TRIGGERED BY: "✏️ Edit" and "🔐 Change" buttons on Settings page
+// =============================================
 function openSetModal(type) {
   setModalType = type;
   var titles = { rname:'Edit Restaurant Name','admin-pin':'Change Admin PIN','boss-pin':'Change Boss PIN','staff-pin':'Change Staff PIN','boss-name':'Edit Display Name','my-pin':'Change My PIN' };
@@ -1829,9 +2206,29 @@ function openSetModal(type) {
   document.getElementById('SET-MODAL').classList.add('open');
 }
 
+// =============================================
+//  FUNCTION: closeSetModal
+//  PURPOSE : Closes the settings edit modal by removing the 'open' CSS class.
+//  PARAMS  : none
+//  TRIGGERED BY: "Cancel" button and "✕" close button in settings modal
+// =============================================
 function closeSetModal() { document.getElementById('SET-MODAL').classList.remove('open'); }
 
-// Save settings changes to Supabase
+// =============================================
+//  FUNCTION: saveSetModal  (ASYNC)  (Save Settings Modal)
+//  PURPOSE : Saves the value entered in the settings modal to Supabase.
+//            Validates: value is not empty; PINs must be exactly 4 digits.
+//            Dispatches to the correct Supabase PATCH call based on setModalType:
+//            - 'rname'       → PATCHes restaurant name, updates CFG + DOM labels.
+//            - 'admin-pin'   → PATCHes admin user pin, updates CFG.adminPin.
+//            - 'boss-pin'    → PATCHes boss user pin, updates CFG.bossPin.
+//            - 'staff-pin'   → PATCHes staff user pin, updates CFG.staffPin.
+//            - 'boss-name'   → PATCHes boss user name, updates CFG + CU + topbar.
+//            - 'my-pin'      → PATCHes boss user pin (same as boss-pin, for boss self-service).
+//  PARAMS  : none
+//  CALLS   : toast, showLoading, sbFetch, hideLoading, closeSetModal, renderSettings
+//  TRIGGERED BY: "💾 Save" button in settings modal
+// =============================================
 async function saveSetModal() {
   var v = document.getElementById('sm-val').value.trim();
   if (!v) { toast('⚠️ Value cannot be empty', 'to'); return; }
@@ -1849,7 +2246,14 @@ async function saveSetModal() {
 }
 
 // =============================================
-//  ADMIN PANEL
+//  FUNCTION: renderAdmin
+//  PURPOSE : Populates the Admin Panel page with live system statistics
+//            and user info from in-memory data (products, txLog, CFG).
+//            Shows: restaurant ID, product count, transaction count,
+//            low-stock count, out-of-stock count, and a user list card
+//            showing all 3 roles (admin, boss, staff) with their display names.
+//  PARAMS  : none
+//  CALLED BY: showPage
 // =============================================
 function renderAdmin() {
   document.getElementById('A-RID').textContent   = RID || '–';
@@ -1864,9 +2268,16 @@ function renderAdmin() {
 }
 
 // =============================================
-//  TOAST NOTIFICATIONS
-//  Shows a small popup at bottom right
-//  cls: 'tg' = green (success), 'tr' = red (error), 'to' = orange (warning)
+//  FUNCTION: toast
+//  PURPOSE : Displays a small auto-dismissing notification popup in the bottom-right corner.
+//            Creates a .toast div with an icon and message, appends it to #TOASTS,
+//            and removes it automatically after 3 seconds.
+//  PARAMS  : msg - String message to display in the toast
+//            cls - CSS class for toast color/style:
+//                  'tg' = green (success / ✅)
+//                  'tr' = red   (error / ❌)
+//                  'to' = orange/warning (⚠️)
+//  CALLED BY: Virtually every async function to report success, error, or warning
 // =============================================
 function toast(msg, cls) {
   var w = document.getElementById('TOASTS');
@@ -1878,10 +2289,16 @@ function toast(msg, cls) {
 }
 
 // =============================================
-//  KEYBOARD SUPPORT
-//  Numbers 0-9: enter PIN digit
-//  Backspace: delete last digit
-//  Other keys: ignored
+//  KEYBOARD EVENT HANDLER
+//  PURPOSE : Allows users to enter PINs using the physical keyboard (number row or numpad).
+//            Also supports Backspace to delete the last digit.
+//            Routes key presses to the correct handler based on which screen is visible:
+//            - SCR-LOGIN  → lpp / ldel  (login PIN entry)
+//            - SCR-SETUP  → wkp / wdel  (wizard PIN entry for the current step)
+//            Only listens on wizard steps 1, 2, 3 (PIN steps) — step 0 is a text field.
+//            All other keys (letters, symbols, etc.) are silently ignored.
+//  PARAMS  : e - KeyboardEvent
+//  CALLS   : lpp, ldel, wkp, wdel
 // =============================================
 document.addEventListener('keydown', function(e) {
   var k = e.key;
@@ -1905,8 +2322,10 @@ document.addEventListener('keydown', function(e) {
 });
 
 // =============================================
-//  START
-//  This runs when the page loads
+//  APP ENTRY POINT
+//  PURPOSE : Starts the application when the page finishes loading.
+//            Calls init() which checks for an existing restaurant registration
+//            and routes to either the setup wizard or the login screen.
 // =============================================
 init();
 </script>
