@@ -1326,9 +1326,17 @@ async function wizNext() {
     // All good — register restaurant in Supabase
     showLoading('Registering restaurant...');
     try {
-      var rname = document.getElementById('w-rname').value.trim();
+    var rname = document.getElementById('w-rname').value.trim();
+      // 自动生成 res001, res002, res003...
+      var allR = await sbFetch('restaurants?select=id&order=id.desc&limit=1');
+      var lastNum = 0;
+      if (allR && allR.length > 0) {
+        var lastId = allR[0].id;
+        lastNum = parseInt(lastId.replace('res', '')) || 0;
+      }
+      var newId = 'res' + String(lastNum + 1).padStart(3, '0');
       // Create restaurant record
-      var rRows = await sbFetch('restaurants', { method: 'POST', body: { name: rname } });
+      var rRows = await sbFetch('restaurants', { method: 'POST', body: { id: newId, name: rname } });
       var rid = rRows[0].id;
       // Create 3 user records (admin, boss, staff)
       await sbFetch('users', { method: 'POST', body: { restaurant_id: rid, role: 'admin', name: 'Admin', pin: wPins.admin } });
